@@ -28,6 +28,9 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOWED_ALL_ORIGINS = True
 
+STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+
 CORS_ALLOWED_ORIGINS = [
 
 "http://localhost:8100"
