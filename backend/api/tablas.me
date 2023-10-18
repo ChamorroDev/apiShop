@@ -1,0 +1,88 @@
+class Producto(models.Model):
+
+class Sucursal(models.Model):
+
+class Bodega(models.Model):
+ 
+class MovimientoBodega(models.Model):
+
+class Persona(models.Model):
+
+class Empleado(models.Model):
+
+class Usuario(models.Model):
+  
+class Cliente(models.Model): 
+ 
+class Factura(models.Model):
+  
+class Boleta(models.Model):
+
+class DetalleFactura(models.Model):
+
+class DetalleBoleta(models.Model):
+    
+class TipoProductoAtributo(models.Model):
+   
+   
+INSERT INTO api_region (nombre, created, edited)
+VALUES
+  ('Región de Arica y Parinacota', datetime('now'), datetime('now')),
+  ('Región de Tarapacá', datetime('now'), datetime('now')),
+  ('Región de Antofagasta', datetime('now'), datetime('now')),
+  ('Región de Atacama', datetime('now'), datetime('now')),
+  ('Región de Coquimbo', datetime('now'), datetime('now')),
+  ('Región de Valparaíso', datetime('now'), datetime('now')),
+  ('Región Metropolitana de Santiago', datetime('now'), datetime('now')),
+  ('Región del Libertador General Bernardo OHiggins', datetime('now'), datetime('now')),
+  ('Región del Maule', datetime('now'), datetime('now')),
+  ('Región de Ñuble', datetime('now'), datetime('now')),
+  ('Región del Biobío', datetime('now'), datetime('now')),
+  ('Región de La Araucanía', datetime('now'), datetime('now')),
+  ('Región de Los Ríos', datetime('now'), datetime('now')),
+  ('Región de Los Lagos', datetime('now'), datetime('now')),
+  ('Región Aysén del General Carlos Ibáñez del Campo', datetime('now'), datetime('now')),
+  ('Región de Magallanes y de la Antártica Chilena', datetime('now'), datetime('now'));
+
+
+INSERT INTO "api_sucursal" ("nombre", "direccion", "numeracion", "created", "edited", "ciudad_id")
+VALUES
+    ('Sucursal Castaños', 'Castaños', '12345', datetime('now'), datetime('now'), 1),
+    ('Sucursal España', 'España', '67890', datetime('now'), datetime('now'), 1),
+    ('Sucursal Manzano', 'Manzano', '13579', datetime('now'), datetime('now'), 1);
+
+
+INSERT INTO api_ciudad (nombre, region_id, created, edited)
+VALUES
+    ("Arica", "1", date('now'), date('now')),
+    ("Camarones", "1", date('now'), date('now'));
+
+    INSERT INTO "api_bodega" ("nombre", "direccion", "numeracion", "created", "edited", "ciudad_id")
+VALUES
+    ('Bodega La Reina', 'Raulies', '12345', datetime('now'), datetime('now'), 1),
+    ('Bodega Matriz', 'Larrain', '67890', datetime('now'), datetime('now'), 1);
+
+
+    
+
+
+
+
+    -- Inserción de registros en la tabla Categoria
+    INSERT INTO api_categoria (name, created, edited, actived) VALUES
+        ('Electrónica', datetime('now'), datetime('now'), 1),
+        ('Ropa', datetime('now'), datetime('now'), 1),
+        ('Juguetes', datetime('now'), datetime('now'), 1),
+        ('Muebles', datetime('now'), datetime('now'), 1),
+        ('Herramientas', datetime('now'), datetime('now'), 1);
+    
+    -- Inserción de registros en la tabla Marca
+    INSERT INTO api_marca (nombre, actived, edited, created) VALUES
+        ('Sony', 1, datetime('now'), datetime('now')),
+        ('Nike', 1, datetime('now'), datetime('now')),
+        ('LEGO', 1, datetime('now'), datetime('now')),
+        ('IKEA', 1, datetime('now'), datetime('now')),
+        ('Bosch', 1, datetime('now'), datetime('now'));
+
+            ciudad = serializers.CharField(source='cliente.ciudad.nombre', read_only=True)
+    genero = serializers.CharField(source='cliente.genero.nombre', read_only=True)
