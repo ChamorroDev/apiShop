@@ -780,7 +780,7 @@ class CrearWebPay(APIView):
                             'respuesta':'Error',
                             'error':e
                             }
-            return JSONResponseOk(dataTodo,msg="Termino mal")
+            return JSONResponseOk(dataTodo,msg="No se realizo el pagó")
 
 
 
