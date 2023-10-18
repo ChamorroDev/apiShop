@@ -99,7 +99,18 @@ DATABASES = {
     }
 }
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dpg-cko446u1101c73dnnc80-a',
+        'USER': 'bend_user',
+        'PASSWORD': '8mencE7Lp23yc1oQo1UfUO6gCRwXcHSP',
+        'HOST': 'b6wac2hopkbxoivs9ntj-mysql.services.clever-cloud.com', 
+        'PORT': '5432',  
+    }
+}
 
+"""
 
 DATABASES = {
     'default': {
@@ -107,9 +118,15 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-"""
+import dj_database_url
 
-
+DATABASES = {
+    'default': dj_database_url.parse(
+        'postgres://bend_user:8mencE7Lp23yc1oQo1UfUO6gCRwXcHSP@dpg-cko446u1101c73dnnc80-a.oregon-postgres.render.com/bend',
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
