@@ -2,7 +2,10 @@ from django.urls import path
 from .views import *
 from django.conf import settings
 from django.conf.urls.static import static
-
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 urlpatterns = [
     path('backend/region/',   RegionList.as_view()),
     path('backend/region/<int:id>/',   RegionDetail.as_view()),
@@ -38,8 +41,34 @@ urlpatterns = [
     path('backend/carroclientepost/', CarroClientePost.as_view()),
     path('backend/sucursal/',   SucursalList.as_view()),
     path('backend/sucursal/<int:id>/',   SucursalDetail.as_view()),
+    path('backend/bodega/',   BodegaList.as_view()),
+    path('backend/bodega/<int:id>/',   BodegaDetail.as_view()),
+    path('backend/proveedor/',   ProveedorList.as_view()),
+    path('backend/proveedor/<int:id>/',   ProveedorDetail.as_view()),
+    path('backend/empleado/',   EmpleadoList.as_view()),
+    path('backend/empleado/<int:id>/',  EmpleadoDetail.as_view()),
+    path('backend/factura/',   FacturaList.as_view()),
+    path('backend/factura/<int:id>/',  FacturaDetail.as_view()),
+    path('backend/boleta/',   BoletaList.as_view()),
+    path('backend/boleta/<int:id>/',  BoletaDetail.as_view()),
     path('backend/carritosucursal/',   CarritoSucursal.as_view()),
+    path('backend/retirador/',   RetiradorCliente.as_view()),
+
     path('backend/crearwebpay/',   CrearWebPay.as_view()),
+    path('backend/errorpago/',   errorPago.as_view()),
+
+
+    path('backend/login/',   CustomTokenObtainPairView.as_view()),
+    path('backend/log/',   LoginView.as_view()),
+    path('backend/foto/',   foto.as_view()),
+    path('backend/serve_image/<int:cliente_id>',   serve_image),
+
+
+
+
+
+    path('backend/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('backend/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 
 
@@ -48,7 +77,7 @@ urlpatterns = [
 
 
                
-    path('obtener_token_csrf/', obtener_token_csrf, name='obtener-token-csrf'),
+
     path('categorias/', ListaCategorias, name='lista-categorias'),
     path('categorias/<int:id>/', DetalleCategoria, name='detalle-categoria'),
 

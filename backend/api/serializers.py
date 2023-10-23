@@ -1,15 +1,52 @@
 from rest_framework import serializers
 from .models import *
 
+class EmpleadoSerializer(serializers.ModelSerializer):
+    nombre_cargo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Empleado
+        fields = ('id', 'nombre','codCargo','nombre_cargo','sueldo')
+    def get_nombre_cargo(self, obj):
+        try:
+            cargo_nombre =Cargo.objects.get(id=obj.codCargo.id)
+            return cargo_nombre.nombre
+        except Cargo.DoesNotExist:
+            return None
+
+
+class FacturaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Factura
+        fields = '__all__'
+
+class BoletaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Boleta
+        fields = '__all__'
+
 class ViewClienteSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.SerializerMethodField()
     genero_nombre = serializers.SerializerMethodField()
     nacimiento = serializers.SerializerMethodField()
     telefono = serializers.SerializerMethodField()
+    foto = serializers.SerializerMethodField()
 
     class Meta:
         model = ViewCliente
-        fields = ('rut', 'dv',  'nombre', 'appaterno', 'apmaterno', 'email','ciudad_nombre','genero_nombre','telefono','nacimiento','genero')
+        fields = ('rut', 'dv',  'nombre', 'appaterno', 'apmaterno', 'email','ciudad_nombre','genero_nombre','telefono','nacimiento','genero','foto')
+    def get_foto(self, obj):
+        try:
+            cliente = Cliente.objects.get(rut_id=obj.rut)
+            if cliente.foto:
+                request = self.context.get('request')
+                photo_url = cliente.foto.url
+            
+                return request.build_absolute_uri(photo_url)
+            else:
+                return None
+        except Cliente.DoesNotExist:
+            return None
     def get_ciudad_nombre(self, obj):
         try:
             ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
@@ -40,16 +77,54 @@ class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
         fields = '__all__'
+        
+class FotoProductoSerializer(serializers.ModelSerializer):
+    foto = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FotoProducto
+        fields = ('producto', 'foto')
+
+    def get_foto(self, obj):
+        try:
+            request = self.context.get('request')
+            if obj.foto:
+                foto_url = obj.foto.url
+                return request.build_absolute_uri(foto_url)
+            else:
+                return None
+        except FotoProducto.DoesNotExist:
+            return None
+
 
 class ProductoDetalleSerializer(serializers.ModelSerializer):
     categorias = serializers.PrimaryKeyRelatedField(many=True, queryset=Categoria.objects.all())
     class Meta:
         model = Producto
         fields = '__all__'
+
 class ProductoSerializer(serializers.ModelSerializer):
+    fotos = serializers.SerializerMethodField()
+
     class Meta:
         model = Producto
-        fields = '__all__'
+        fields = ('id', 'nombre', 'descripcion', 'marca', 'modelo', 'precio', 'categorias', 'created', 'edited', 'actived', 'fotos')
+    def get_fotos(self, obj):
+        try:
+            fotos_productos = FotoProducto.objects.filter(producto=obj.id)
+            if fotos_productos.exists():
+                request = self.context.get('request')
+                fotos_urls = [request.build_absolute_uri(foto.foto.url) for foto in fotos_productos]
+                return fotos_urls   
+            else:
+                return None
+        except FotoProducto.DoesNotExist:
+            return None
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
@@ -61,9 +136,17 @@ class CiudadSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BodegaSerializer(serializers.ModelSerializer):
+    ciudad_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = Bodega
-        fields = '__all__'
+        fields = ('id', 'nombre',  'direccion', 'numeracion','ciudad','ciudad_nombre')
+    def get_ciudad_nombre(self, obj):
+        try:
+            ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
+            return ciudad_obj.nombre
+        except Ciudad.DoesNotExist:
+            return None
 
 class SucursalSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.SerializerMethodField()
@@ -83,10 +166,7 @@ class MovimientoBodegaSerializer(serializers.ModelSerializer):
         model = MovimientoBodega
         fields = '__all__'
 
-class EmpleadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Empleado
-        fields = '__all__'
+
 
 class MarcaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -171,6 +251,7 @@ class CarritoSerializer(serializers.ModelSerializer):
     precio = serializers.IntegerField(source='producto.precio', read_only=True)
     descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
     marca = serializers.CharField(source='producto.marca.nombre', read_only=True)
+
 
     
 

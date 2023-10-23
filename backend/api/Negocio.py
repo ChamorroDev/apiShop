@@ -1,17 +1,17 @@
 from .models import *
+from django.core.files.base import ContentFile
+
+import base64
+
 class Negocio:
     def get_viewCliente( rut):
         try:
-            # trampa
-            # ViewCliente ==> declarada en la model, pero es una vista en la base de datos
             return ViewCliente.objects.get(pk=rut)
         except ViewCliente.DoesNotExist:
             raise None
         
     def get_viewClienteAll():
         try:
-            # trampa
-            # ViewCliente ==> declarada en la model, pero es una vista en la base de datos
             return ViewCliente.objects.all()
         except ViewCliente.DoesNotExist:
             raise None        
@@ -35,8 +35,25 @@ class Negocio:
                 return None
         except Usuario.DoesNotExist:
             return None
-            
-    def clienteCrear(rut,dv,nombres,paterno,materno,email,telefono,genero):
+    def actualizarFotoCliente(cliente, foto):
+        
+        image_data =foto
+        format, imgstr = image_data.split(';base64,')  
+        ext = format.split('/')[-1]  
+        image_data = base64.b64decode(imgstr)
+
+        cliente.foto.save(f'cliente_{cliente.rut}_foto.{ext}', ContentFile(image_data), save=True)
+
+        return cliente
+    def eliminarFotoCliente(cliente):
+        if cliente.foto:
+            foto_path = cliente.foto.path
+            os.remove(foto_path)  
+
+            cliente.foto.delete(save=True)
+        return cliente
+
+    def clienteCrear(rut,dv,nombres,paterno,materno,email,telefono,genero,foto):
         persona = Negocio.get_persona(int(rut))
         cliente = Negocio.get_cliente(rut)
         usuario = Negocio.get_usuario(rut)
@@ -49,10 +66,22 @@ class Negocio:
                                apmaterno=materno,email=email,telefono=telefono,fechaNacimiento='2023-01-01',genero=gen)
         else:
             persona.nombre=nombres
+            persona.appaterno=paterno
+            persona.apmaterno=materno
+            persona.email=email
+            persona.telefono=telefono
+            persona.genero=gen
 
-        # No tienen mucho sentido solo es para el ejemplo
         if (cliente== None):
-            cliente = Cliente(rut,None,'2023-01-01',0)
+            
+            cliente = Cliente(rut=rut)
+            cliente=Negocio.actualizarFotoCliente(cliente, foto)
+            
+        else:
+            cliente=Negocio.eliminarFotoCliente(cliente)
+            
+            cliente=Negocio.actualizarFotoCliente(cliente, foto)
+
         if (usuario== None):
             usuario = Usuario(None,rut,rut,rut)
         persona.save()
@@ -72,7 +101,6 @@ class Negocio:
         persona = Negocio.get_persona(int(rut))
         cliente = Negocio.get_cliente(rut)
         usuario = Negocio.get_usuario(rut)
-        ###  Recuerde que no debiera eliminar, mejor desactivar el registro
         usuario.delete()
         cliente.delete()
         persona.delete()          

@@ -11,8 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -28,8 +27,8 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOWED_ALL_ORIGINS = True
 
-STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+# STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 CORS_ALLOWED_ORIGINS = [
 
@@ -50,7 +49,31 @@ INSTALLED_APPS = [
     'api',
     'rest_framework',
     'corsheaders',
+    'rest_framework_simplejwt'
+    
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+# JWT configurations
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -99,16 +122,7 @@ DATABASES = {
     }
 }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dpg-cko446u1101c73dnnc80-a',
-        'USER': 'bend_user',
-        'PASSWORD': '8mencE7Lp23yc1oQo1UfUO6gCRwXcHSP',
-        'HOST': 'b6wac2hopkbxoivs9ntj-mysql.services.clever-cloud.com', 
-        'PORT': '5432',  
-    }
-}
+
 
 """
 
@@ -118,15 +132,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        'postgres://bend_user:8mencE7Lp23yc1oQo1UfUO6gCRwXcHSP@dpg-cko446u1101c73dnnc80-a.oregon-postgres.render.com/bend',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

@@ -24,7 +24,12 @@ class DetalleBoleta(models.Model):
     
 class TipoProductoAtributo(models.Model):
    
-   
+INSERT INTO tu_app_genero (nombre) VALUES ('Masculino');
+
+INSERT INTO tu_app_persona (rut, dv, nombre, appaterno, apmaterno, email, telefono, fechaNacimiento, genero_id, actived, edited, created)
+VALUES (12345678, '9', 'Nombre', 'ApellidoPaterno', 'ApellidoMaterno', 'correo@ejemplo.com', '123456789', '1990-01-01', 1, 1, DATETIME('now'), DATETIME('now'));
+
+
 INSERT INTO api_region (nombre, created, edited)
 VALUES
   ('Región de Arica y Parinacota', datetime('now'), datetime('now')),

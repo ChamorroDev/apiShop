@@ -1,5 +1,5 @@
 from django.db import models
-
+import os, uuid
 class TipoDespacho(models.Model):
     id = models.AutoField(primary_key=True)
     nombre=models.CharField(max_length=20, null=False)
@@ -29,6 +29,9 @@ class Marca(models.Model):
     edited = models.DateTimeField(auto_now=True) 
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
 
+
+
+
 class Producto(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=255)
@@ -44,7 +47,15 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
     
+def cargar_foto_producto(instance, filename):
+    name, ext = os.path.splitext(filename)
+    unique_identifier = uuid.uuid4().hex  
+    new_filename = f'producto_{instance.producto.id}_{unique_identifier}{ext}'
+    return os.path.join(f'producto{instance.producto.id}', 'img', new_filename)
 
+class FotoProducto(models.Model):
+    producto = models.ForeignKey(Producto, related_name='fotos', on_delete=models.CASCADE)
+    foto = models.ImageField(upload_to=cargar_foto_producto)
 
 class Region(models.Model):
     id = models.AutoField(primary_key=True)
@@ -69,7 +80,7 @@ class Ciudad(models.Model):
 
 
 class Genero(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True) 
     name = models.CharField(max_length=100)
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True) 
@@ -104,26 +115,48 @@ class Empleado(models.Model):
     rut = models.ForeignKey(Persona, models.DO_NOTHING,default=1)
     nombre = models.CharField(max_length=100)
     codCargo = models.ForeignKey(Cargo, models.DO_NOTHING,default=1)
-    sueldo = models.IntegerField(null=False,default=0)
+    sueldo = models.IntegerField(null=False,default=0)  
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
     actived = models.IntegerField(blank=True, null=True)  
 
-def cargarFoto(instance, filename):
-    return "fotos/foto_{0}_{1}".format(instance.rut, filename )
+class Proveedor(models.Model):
+    id = models.AutoField(primary_key=True)
+    rut = models.ForeignKey(Persona, models.DO_NOTHING,default=1)
+    nombre = models.CharField(max_length=100)
+    created = models.DateTimeField(auto_now_add=True)
+    edited = models.DateTimeField(auto_now=True)
+    actived = models.IntegerField(blank=True, null=True)  
+
+
+class ProductoProveedor(models.Model):
+    proveedor = models.ForeignKey(Proveedor, models.DO_NOTHING)
+    producto = models.ForeignKey(Producto, models.DO_NOTHING)
+    precio = models.IntegerField(null=False)
+    created = models.DateTimeField(auto_now_add=True)
+    edited = models.DateTimeField(auto_now=True)
+    actived = models.IntegerField(blank=True, null=True)  
+
+
+
+def cargar_foto(instance, filename):
+    name, ext = os.path.splitext(filename)
+    unique_identifier = uuid.uuid4().hex  
+    new_filename = f'cliente_{instance.rut}_{unique_identifier}{ext}'
+    return os.path.join('clientes',f'cliente{instance.rut}', 'img', new_filename)
 
 class Usuario(models.Model):
     id = models.AutoField(primary_key=True)
     rut = models.ForeignKey(Persona, models.DO_NOTHING)
     usuario=models.CharField(unique=True,max_length=20, null=False)
     clave=models.CharField(max_length=10, null=False)
-    
-    def __str__(self):
-        return self.usuario
+    is_active = models.BooleanField(default=True,null=True)  
+    def verificar_clave(self, raw_password):
+        return self.clave == raw_password
 
 class Cliente(models.Model): 
     rut    = models.OneToOneField(Persona, models.DO_NOTHING, primary_key=True)
-    #foto  = models.ImageField(upload_to=cargarFoto, null=True)
+    foto  = models.ImageField(upload_to=cargar_foto, null=True)
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
     actived = models.IntegerField(blank=True, null=True) 
@@ -173,13 +206,12 @@ class Sucursal(models.Model):
         return self.nombre
     
 class personaFactura(models.Model):
-    id =  models.IntegerField( primary_key=True)
+    id =  models.AutoField( primary_key=True)
     rut    = models.IntegerField()
     dv    = models.CharField(max_length=1)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     numero = models.IntegerField()
-    ciudad = models.ForeignKey(Ciudad, models.DO_NOTHING)
 
 
 class RetiroPersona(models.Model):
@@ -290,12 +322,21 @@ class ViewCliente(models.Model):
 class Bodega(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
-    direccion = models.ForeignKey(Direccion, on_delete=models.CASCADE)  
+    direccion = models.CharField(max_length=255, null=True)
+    numeracion = models.IntegerField( null=True) 
+    ciudad = models.ForeignKey(Ciudad, on_delete=models.CASCADE, null=True)
+
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
     def __str__(self):
         return self.nombre
 
+class ComprasProveedor(models.Model):
+    producto = models.ForeignKey(Producto, models.DO_NOTHING)
+    precio = models.IntegerField(null=False)
+    cantidad = models.IntegerField(null=False)
+    destino = models.ForeignKey(Bodega, models.DO_NOTHING)
+    created = models.DateTimeField(auto_now_add=True)
 
 class ProductoCantidad(models.Model):
     id = models.AutoField(primary_key=True)
@@ -316,13 +357,14 @@ class Carrito(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     cantidad = models.IntegerField( )
     documento= models.CharField(max_length=100, null=True)
+    razonFactura = models.ForeignKey(personaFactura, on_delete=models.CASCADE, null=True)  
     envio= models.CharField(max_length=100, null=True)
 
     sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, null=True)  
     retiroPersona = models.ForeignKey(RetiroPersona, on_delete=models.CASCADE, null=True)
     direccion = models.ForeignKey(Direccion, on_delete=models.CASCADE, null=True)
     tipoDespacho = models.ForeignKey(TipoDespacho, on_delete=models.CASCADE, null=True)
-
+    error= models.CharField( max_length=150,null=True,default="Sin errores")
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
 
@@ -341,6 +383,3 @@ class MovimientoBodega(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"ID: {self.id}, Producto: {self.producto}, Cantidad: {self.cantidad}"
-    

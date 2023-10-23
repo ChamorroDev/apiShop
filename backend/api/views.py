@@ -13,7 +13,13 @@ from django.core import serializers
 from django.core.exceptions import ValidationError
 from rest_framework import status
 from transbank.webpay.transaccion_completa.transaction import Transaction
-
+from transbank.error.transbank_error import TransbankError
+from PIL import Image
+from io import BytesIO
+from django.core.files import File
+from django.core.files.storage import default_storage
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import IntegrityError
 
 class JSONResponseOkRows(HttpResponse):
     def __init__(self, data,msg, **kwargs):
@@ -38,6 +44,109 @@ class JSONResponseErr(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponseErr, self).__init__(content, **kwargs)
+
+class EmpleadoList(APIView):
+    def get(self, request, format=None):
+         registro = Empleado.objects.all()
+         serializer = EmpleadoSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = EmpleadoSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="Empleado Agregada")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+class EmpleadoDetail(APIView):
+    def get(self, request, id, format=None):
+            registro = Empleado.objects.get(id=id)
+            serializer = EmpleadoSerializer(registro)
+            return JSONResponseOk(serializer.data,msg="")  
+    def put(self, request, id, format=None):
+        registro = Empleado.objects.get(id=id)
+        data = JSONParser().parse(request)
+        registro_serializer = EmpleadoSerializer(registro, data=data)
+        if registro_serializer.is_valid():
+            registro_serializer.save()
+            return JSONResponseOk(None,msg="Empleado Actualizada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProveedorList(APIView):
+    def get(self, request, format=None):
+         registro = Proveedor.objects.all()
+         serializer = ProveedorSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = ProveedorSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="Proveedor Agregada")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+class ProveedorDetail(APIView):
+    def get(self, request, id, format=None):
+            registro = Proveedor.objects.get(id=id)
+            serializer = ProveedorSerializer(registro)
+            return JSONResponseOk(serializer.data,msg="")  
+    def put(self, request, id, format=None):
+        registro = Proveedor.objects.get(id=id)
+        data = JSONParser().parse(request)
+        registro_serializer = ProveedorSerializer(registro, data=data)
+        if registro_serializer.is_valid():
+            registro_serializer.save()
+            return JSONResponseOk(None,msg="Proveedor Actualizada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+class BodegaList(APIView):
+    def get(self, request, format=None):
+        BodegaLista = BodegaSerializer(Bodega.objects.all(), many=True)
+        RegionLista = RegionSerializer(Region.objects.all(), many=True)
+        CiudadLista = CiudadSerializer(Ciudad.objects.all(), many=True)
+        dataTodo = {
+           
+                'regBodegaList':BodegaLista.data,
+                'regRegionList':RegionLista.data,
+                'regCiudadesList':CiudadLista.data,
+
+                }
+        return JSONResponseOk(dataTodo,msg="Lista bodegas")
+
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = BodegaSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="agregada bodegas")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+class BodegaDetail(APIView):
+    def get(self, request, id, format=None):
+        BodegaLista = BodegaSerializer(Bodega.objects.get(id=id))
+        RegionLista = RegionSerializer(Region.objects.all(), many=True)
+        CiudadLista = CiudadSerializer(Ciudad.objects.all(), many=True)
+        dataTodo = {
+           
+                'regBodegaList':BodegaLista.data,
+                'regRegionList':RegionLista.data,
+                'regCiudadesList':CiudadLista.data,
+
+                }
+        return JSONResponseOk(dataTodo,msg="Detalle bodegas")
+    
+    def put(self, request, id, format=None):
+        registro = Bodega.objects.get(id=id)
+        data = JSONParser().parse(request)
+        registro_serializer = BodegaSerializer(registro, data=data)
+        if registro_serializer.is_valid():
+            registro_serializer.save()
+            return JSONResponseOk(None,msg="actualizada bodegas")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
 class SucursalList(APIView):
     def get(self, request, format=None):
@@ -408,9 +517,61 @@ class TarjetaDetail(APIView):
             return JSONResponseOk(None,msg="Tarjeta Actualizada")
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
   
+class FacturaList(APIView):
+    def get(self, request, format=None):
+         registro = Factura.objects.all()
+         serializer = FacturaSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = FacturaSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="Factura Agregado")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
+class FacturaDetail(APIView):
+    def get(self, request, id, format=None):
+            registro = Factura.objects.get(id=id)
+            serializer = FacturaSerializer(registro)
+            return JSONResponseOk(serializer.data,msg="")  
+    def put(self, request, id, format=None):
+        registro = Factura.objects.get(id=id)
+        data = JSONParser().parse(request)
+        registro_serializer = FacturaSerializer(registro, data=data)
+        if registro_serializer.is_valid():
+            registro_serializer.save()
+            return JSONResponseOk(None,msg="Factura Actualizado")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
+class BoletaList(APIView):
+    def get(self, request, format=None):
+         registro = Boleta.objects.all()
+         serializer = BoletaSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = BoletaSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="Boleta Agregado")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
+class BoletaDetail(APIView):
+    def get(self, request, id, format=None):
+            registro = Boleta.objects.get(id=id)
+            serializer = BoletaSerializer(registro)
+            return JSONResponseOk(serializer.data,msg="")  
+    def put(self, request, id, format=None):
+        registro = Boleta.objects.get(id=id)
+        data = JSONParser().parse(request)
+        registro_serializer = BoletaSerializer(registro, data=data)
+        if registro_serializer.is_valid():
+            registro_serializer.save()
+            return JSONResponseOk(None,msg="Boleta Actualizado")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
@@ -433,6 +594,7 @@ class ViewCategoriasMarcasAtributos(APIView):
 
 class CiudadesRegiones(APIView):
     def get(self, request, format=None):
+           
             
             dataRegion = RegionSerializer(Region.objects.all(), many=True)
             dataCiudad = CiudadSerializer(Ciudad.objects.all(), many=True)
@@ -444,10 +606,23 @@ class CiudadesRegiones(APIView):
     
 class ViewProductoList(APIView):
     def get(self, request, format=None):
+            # Crear una imagen de prueba
+            """
+            image = Image.new('RGB', (100, 100), color='red')
+            image_file = BytesIO()
+            image.save(image_file, 'png')
+            image_file.seek(0)
+            producto=Producto.objects.get(id=1)
+            foto_producto = FotoProducto(producto=producto)
+            foto_producto.foto.save('test_image.png', File(image_file))
+            producto.save()
+            foto_producto.save()
+            """
+
+
+            dataProducto = ProductoSerializer(Producto.objects.all(), many=True, context={'request': request})
+
             
-            dataProducto = ProductoSerializer(Producto.objects.all(), many=True)
-
-
             dataTodo = {
                         'regProducto':dataProducto.data,
                          }
@@ -457,17 +632,35 @@ class ViewProductoList(APIView):
         data = JSONParser().parse(request)
         producto = data["producto"]
         atributos = data["atributos"]
+        fotos = data["foto"]
+
         registro = Producto()
         registro.nombre = producto.get("nombre", registro.nombre)
         registro.descripcion = producto.get("descripcion", registro.descripcion)
         registro.marca = Marca.objects.get(id=int(producto["marca"]))
         registro.modelo = producto.get("modelo", registro.modelo)
         
+
         try:
             registro.full_clean()
         except ValidationError as e:
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST, msg=str(e))
         registro.save()   
+        i=0
+        for foto in fotos:
+            
+           
+            image_data = foto
+            format, imgstr = image_data.split(';base64,')  
+            ext = format.split('/')[-1]  
+            image_data = base64.b64decode(imgstr)
+            
+            nombre_archivo = f'producto_{i}_foto.{ext}'
+            foto_producto = FotoProducto(producto=registro, foto=nombre_archivo)
+            foto_producto.foto.save(nombre_archivo, ContentFile(image_data))
+            foto_producto.save()
+            i += 1
+    
 
         for atributo in atributos:
             nombre_atributo = atributo.get("nombreAtributo")
@@ -487,6 +680,7 @@ class ViewProductoList(APIView):
                 categoria = Categoria.objects.get(id=categoria_id)
                 registro.categorias.add(categoria)
             except Categoria.DoesNotExist:
+                print("hola")
                 return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST, msg=f"Categoría con ID {categoria_id} no encontrada")
 
         return JSONResponseOk(None, msg="Producto Agregado")
@@ -497,11 +691,14 @@ class ViewProductoDetail(APIView):
             producto= Producto.objects.get(id=ide)
             dataMarcasList = MarcaSerializer(Marca.objects.all(), many=True)
             dataAtributosList = AtributoSerializer(Atributo.objects.all(), many=True)
-
+            dataFotos= FotoProducto.objects.filter(producto=producto)
             dataProducto = ProductoDetalleSerializer(producto)
             dataMarca = MarcaSerializer(Marca.objects.get(id=producto.marca.id))
             dataCategorias = CategoriaSerializer(producto.categorias.all(), many=True)
             tipo_producto_atributos = TipoProductoAtributo.objects.filter(producto=producto)
+
+
+            dataFotosList = FotoProductoSerializer(dataFotos, many=True, context={'request': request})
 
             dataCategoriasList = CategoriaSerializer(Categoria.objects.all(), many=True)
             tipo_producto_atributos_serializer = TipoProductoAtributoSerializer(tipo_producto_atributos, many=True)
@@ -513,6 +710,8 @@ class ViewProductoDetail(APIView):
                         'regMarcaList':dataMarcasList.data,
                         'regCategoriasList':dataCategoriasList.data,
                         'regAtributoList':dataAtributosList.data,
+                        'dataFotos':dataFotosList.data,
+
                          }
             return JSONResponseOk(dataTodo,msg="Detalle producto")
   
@@ -521,6 +720,8 @@ class ViewProductoDetail(APIView):
         data = JSONParser().parse(request)
         producto = data["producto"]
         atributos = data["atributos"]
+        fotos = data["fotos"]
+
         registro.nombre = producto.get("nombre", registro.nombre)
         registro.descripcion = producto.get("descripcion", registro.descripcion)
         registro.marca = Marca.objects.get(id=int(producto["marca"]))
@@ -543,18 +744,12 @@ class ViewProductoDetail(APIView):
         for valor in ids_a_eliminar:
             ValorAtributo.objects.filter(id=int(valor)).delete()
         for atributo in atributos:
+
             nombre_atributo = atributo.get("nombreAtributo")
             valor_atributo = atributo.get("valorAtributo")
-            try:
-                atributo_obj = Atributo.objects.get(nombre=nombre_atributo)
-            except Atributo.DoesNotExist:
-                atributo_obj = Atributo(nombre=nombre_atributo)
-                atributo_obj.save()
-            try:
-                valor_atributo_obj = ValorAtributo.objects.get(valor=valor_atributo)
-            except ValorAtributo.DoesNotExist:
-                valor_atributo_obj = ValorAtributo(valor=valor_atributo)
-                valor_atributo_obj.save()
+            valor_atributo_obj = ValorAtributo(valor=valor_atributo)
+            valor_atributo_obj.save()
+            atributo_obj = Atributo.objects.get(nombre=nombre_atributo)
             tipo_producto_atributo = TipoProductoAtributo(
                 atributo=atributo_obj,
                 valorAtributo=valor_atributo_obj,
@@ -562,6 +757,21 @@ class ViewProductoDetail(APIView):
             )
             tipo_producto_atributo.save()
         registro.save()  
+        i=0
+        FotoProducto.objects.filter(producto=registro).delete()
+
+        for foto in fotos:
+            foto_producto = FotoProducto(producto=registro)
+            image_data =foto
+            format, imgstr = image_data.split(';base64,')  
+            ext = format.split('/')[-1]  
+            image_data = base64.b64decode(imgstr)
+            
+            nombre_archivo = f'producto_{i}_foto.{ext}'
+            foto_producto.foto.save(nombre_archivo, ContentFile(image_data))
+            foto_producto.save
+            i=i+1
+            
         return JSONResponseOk(None, msg="Producto Actualizado")
   
  
@@ -579,7 +789,8 @@ class ClienteList(APIView):
                             ,data['nombre'],data['appaterno'],data['apmaterno']
                             ,data['email']
                             ,data['telefono']
-                            ,data['genero'])):
+                            ,data['genero']
+                            ,data['foto'])):
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
         return JSONResponseOk(None,msg="Registro Actualizado")
 
@@ -587,7 +798,7 @@ class ClienteDetail(APIView):
     
     def get(self, request, rut, format=None):
         registro = Negocio.clienteGet(rut)
-        serializer = ViewClienteSerializer(registro)
+        serializer = ViewClienteSerializer(registro, context={'request': request})  # Pasar el contexto al serializador
         return JSONResponseOk(serializer.data,msg="")  
     
     # No es necesario ya que el Negocio.clienteCrear, actualiza o crea
@@ -617,6 +828,7 @@ class CarritoSucursal(APIView):
      def post(self, request,format=None):
         data = JSONParser().parse(request)
         cliente=Cliente.objects.get(rut=data['rut'])
+        print (data)
         if 'sucursal' in data:
             sucursal=Sucursal.objects.get(id=data['sucursal'])
             carros=Carrito.objects.filter(cliente=cliente)
@@ -656,38 +868,72 @@ class CarritoSucursal(APIView):
         else:
             return JSONResponseOk(data,msg="no existe nada")
      
+
+class RetiradorCliente(APIView):
+    def post(self, request,format=None):
+        data = JSONParser().parse(request)
+        print (data)
+        cliente=Cliente.objects.get(rut=data['rut'])
+        print (cliente.rut)
+        carrito=Carrito.objects.filter(cliente=cliente)
+        persona=RetiroPersona(data['retiraRUT'],data['dv'],data['nombre'],data['apellido'])
+        
+        persona.save()
+        print(persona.nombre)
+        for producto in carrito:
+            producto.retiroPersona=persona
+            producto.save()
+            print(producto.retiroPersona.nombre)
+
+
+        return JSONResponseOk(data,msg="no existe, se agrega al carro")
+
+
 class CarroCliente(APIView):
     
     def get(self, request, rut, format=None):
         carritos = Carrito.objects.filter(cliente=rut)
         serializer = CarritoSerializer(carritos, many=True)
+        fotos_url=[]
+        for carrito in carritos:
+            primer_foto = carrito.producto.fotos.first()  
+
+            if primer_foto:
+                
+                fotos_url.append(request.build_absolute_uri(primer_foto.foto.url))
+
         dataTodo = {
             'regProducto': serializer.data,
+            'regFotos':fotos_url
         }
         return JSONResponseOk(dataTodo,msg="Listado del carrito")
     def post(self, request,rut,format=None):
-        data = JSONParser().parse(request)
+        data = JSONParser().parse(request)    
+        fac = data.get('personaFactura')
+        if fac['rut']!=None:
+            razon = personaFactura.objects.create(rut=fac['rut'],  dv=fac['dv'], nombre=fac['nombre'], direccion=fac['direccion'], numero=fac['numero'])
+            razon.save()
         cliente=Cliente.objects.get(rut=rut)
         Carrito.objects.filter(cliente=cliente).delete()
         for elem in data['productos']:
             producto=Producto.objects.get(id=elem['producto'])
-
             if data['documento'] == 'Boleta':
                 if data['envio'] == 'Direccion':
                     carro=Carrito(cantidad=elem['cantidad'],cliente=cliente,producto=producto,documento= 'Boleta',envio="Direccion")
                 if data['envio'] == 'Sucursal':
                     carro=Carrito(cantidad=elem['cantidad'],cliente=cliente,producto=producto,documento= 'Boleta',envio="Sucursal")
-
             if data['documento'] == 'Factura':
                 if data['envio'] == 'Direccion':
                     carro=Carrito(cantidad=elem['cantidad'],cliente=cliente,producto=producto,documento= 'Factura',envio="Direccion")
-
                 if data['envio'] == 'Sucursal':
                     carro=Carrito(cantidad=elem['cantidad'],cliente=cliente,producto=producto,documento= 'Factura',envio="Sucursal")
-            
+            if fac['rut']!=None:
+                carro.razonFactura=razon
+            else:
+                carro.razonFactura=None
             carro.save()
-
         return JSONResponseOk(data,msg="no existe, se agrega al carro")
+
 
 
     def delete(self, request,rut, format=None):
@@ -716,9 +962,14 @@ class CarroClientePost(APIView):
         carro.save()
         return JSONResponseOk(data,msg="Si existe, se cambia al cantidad")
         
-from transbank.error.transbank_error import TransbankError
 class CrearWebPay(APIView):
     def post(self, request,format=None):
+        data = JSONParser().parse(request)
+        tar=data['tarjeta']
+        cli=Cliente.objects.get(rut=data['rut'])
+        
+       
+
         try:
             ####3 CREO EL PEDIDO ADEMAS EN ESTADO NO PAGADO Y TODAS LAS DEMAS VARIABLES
             total=123
@@ -728,15 +979,12 @@ class CrearWebPay(APIView):
 
             ##response = (Transaction()).create(orden_compra, s_id, total, return_url)
             ##print (response)
-            data = JSONParser().parse(request)
-            tar=data['tarjeta']
+            
 
 
             tarjeta=Tarjeta.objects.get(id=tar['id'])
             card_number =str(tarjeta.numero)
-
             cvv = str(tarjeta.csv)
-
             card_expiration_date = str(tarjeta.annovenc)+'/'+str(tarjeta.mesvenc)
 
             # Crear la transacción
@@ -744,16 +992,8 @@ class CrearWebPay(APIView):
 
             if 'token' in resp_create:
                 token = resp_create['token']
-        
-
                 resp_status = Transaction().status(token=token)
-
-                print(resp_status)
-            else:
-                print("Error al crear la transacción: ", resp_create)  
-
-
-        
+     
             grace_period = 0
             id_query_installments = "id1" 
             deferred_period_index = 0 
@@ -766,24 +1006,181 @@ class CrearWebPay(APIView):
                     print("Transacción confirmada exitosamente.")
                 else:
                     print(f"Error al confirmar la transacción: {resp_commit.get('response_code', 'Desconocido')} - {resp_commit.get('error_message', 'Mensaje de error no proporcionado')}")
-            except TransbankError as e:
-                print(f"Error al confirmar la transacción: {e.code} - {e.message}")  
+            except Exception as e:
+                carrito= Carrito.objects.filter(cliente=cli) 
+                for carro in carrito:
+                    carro.error=e.message
+                    carro.save()
+
+                data = {
+                                'respuesta':'Error',
+                                'error':e.message
+                                }
+                return JSONResponseOk(data,msg="No se realizo el pagó!")
             resp_status = Transaction().status(token=token)
             dataTodo = {
                             'respuesta':resp_status
                             }
-            return JSONResponseOk(dataTodo,msg="Termino bien")
-        except Exception as e:
-            print(f"Error al confirmar la transacción: {e.code} - {e.message}")  
+            
 
-            dataTodo = {
+
+            ####CREACION DE BOLETA-FACTURA
+            carrito= Carrito.objects.filter(cliente=cli) 
+            for carro in carrito:
+                carro.error="Sin errores"
+                carro.save()
+            primer_producto =carrito.first()
+
+            if primer_producto.documento=="Boleta":
+                boleta=Boleta()
+                boleta.cliente=cli
+                if primer_producto.envio=="Direccion":
+                    boleta.direccion=primer_producto.direccion
+                    boleta.tipoDespacho= TipoDespacho.objects.get(id=2) 
+                    boleta.forma_pago= FormaPago.objects.get(id=1) 
+                    boleta.estadoPedido= EstadoPedido.objects.get(id=10)
+
+                if primer_producto.envio=="Sucursal":
+                    boleta.sucursal=primer_producto.sucursal
+                    boleta.retiroPersona=primer_producto.retiroPersona
+                    boleta.tipoDespacho= TipoDespacho.objects.get(id=1) 
+                    boleta.forma_pago= FormaPago.objects.get(id=1) 
+                    boleta.estadoPedido= EstadoPedido.objects.get(id=10)
+                    boleta.retiroPersona=primer_producto.retiroPersona
+                boleta.precio_total=0
+                boleta.save()
+                total=0
+                for producto in carrito :
+                    detalle=DetalleBoleta()
+                    detalle.boleta=boleta
+                    prod=Producto.objects.get(id=producto.producto.id) 
+                    detalle.producto=prod
+                    detalle.cantidad=producto.cantidad
+                    detalle.precio_unitario=prod.precio
+                    detalle.subtotal=prod.precio*producto.cantidad
+                    total=total+detalle.subtotal
+                    detalle.save()
+
+                boleta.precio_total=total
+                boleta.save()
+                carrito.delete()
+            if primer_producto.documento=="Factura":
+                factura=Factura()
+                factura.cliente=cli
+                factura.personaFactura=primer_producto.razonFactura
+                if primer_producto.envio=="Direccion":
+                    factura.direccion=primer_producto.direccion
+                    factura.tipoDespacho= TipoDespacho.objects.get(id=2) 
+                    factura.forma_pago= FormaPago.objects.get(id=1) 
+                    factura.estadoPedido= EstadoPedido.objects.get(id=10)
+
+                if primer_producto.envio=="Sucursal":
+                    factura.sucursal=primer_producto.sucursal
+                    factura.retiroPersona=primer_producto.retiroPersona
+                    factura.tipoDespacho= TipoDespacho.objects.get(id=1) 
+                    factura.forma_pago= FormaPago.objects.get(id=1) 
+                    factura.estadoPedido= EstadoPedido.objects.get(id=10)
+                    
+                factura.precio_total=0
+                factura.save()
+                total=0
+                for producto in carrito :
+                    detalle=DetalleFactura()
+                    detalle.factura=factura
+                    prod=Producto.objects.get(id=producto.producto.id) 
+                    detalle.producto=prod
+                    detalle.cantidad=producto.cantidad
+                    detalle.precio_unitario=prod.precio
+                    detalle.subtotal=prod.precio*producto.cantidad
+                    total=total+detalle.subtotal
+                    detalle.save()
+
+                factura.precio_total=total
+                factura.save()
+                carrito.delete()
+
+
+
+
+            return JSONResponseOk(dataTodo,msg="Termino bien")
+        
+        except Exception as e:
+            data = {
                             'respuesta':'Error',
                             'error':e
+                    
                             }
-            return JSONResponseOk(dataTodo,msg="No se realizo el pagó!")
+            return JSONResponseOk(data,msg="No se realizo el pagó!")
+
+
+class errorPago(APIView):
+    def post(self, request,format=None):
+        data = JSONParser().parse(request)
+        cli=Cliente.objects.get(rut=data['rut'])
+        carrito= Carrito.objects.filter(cliente=cli) 
+        data = {
+                'error':carrito[1].error
+                }
+        return JSONResponseOk(data,msg="")
+    
+from rest_framework_simplejwt.views import TokenObtainPairView
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+
+        usuario_name = request.data.get('username')
+        password = request.data.get('password')
+        info=""
+        print (usuario_name)
+        if usuario_name is None or password is None:
+            print ("if")
+
+            return JSONResponseOk(info,msg='error Credenciales inválidas')
+        
+        try:
+            print ("try")
+
+            usuario = Usuario.objects.get(usuario=usuario_name,clave=password)
+
+        except Usuario.DoesNotExist:
+            print ("exc")
+
+            return JSONResponseOk(info,msg='error Credenciales inválidas try')
+        
+        print ("info")
+
+        info={'id': usuario.id,
+            'access':  (CustomTokenObtainPairView, self).post(request, *args, **kwargs).data['access']
+
+        }
+        return JSONResponseOk(info,msg='Todo correcto')
+    
+from rest_framework_simplejwt.tokens import RefreshToken
+class LoginView(APIView):
+     def post(self, request):
+        usuario_name = request.data.get('username')
+        password = request.data.get('password')
+        info="error"
+        if usuario_name is None or password is None:
+            return JSONResponseOk(info,msg='error')
+        try:
+            usuario = Usuario.objects.get(usuario=usuario_name,clave=password)
+        except Usuario.DoesNotExist:
+            return JSONResponseOk(info,msg='error')
+        refresh = RefreshToken.for_user(usuario)
+        access_token = str(refresh.access_token)
+      
+        info={
+            'access_token': access_token ,
+            'username': usuario_name,
+            'rut':usuario.rut.rut
+
+        }
+        
+        return JSONResponseOk(info,msg='Todo correcto')
 
 
 
+       
 
 ############## END VISTAS NEGOCIO ######################
 ###################### END VISTAS NEGOCIO ######################
@@ -791,7 +1188,7 @@ class CrearWebPay(APIView):
 ###################### END VISTAS NEGOCIO ######################
 ###################### END VISTAS NEGOCIO ######################
 @csrf_exempt
-def obtener_token_csrf(request):
+def obtener_token_jwt(request):
     token = get_token(request)
     return JsonResponse({'csrf_token': token})
 
@@ -1124,3 +1521,48 @@ def DetalleBodega(request, id):
             return JSONResponse(registro_serializer.data)
 
     return JSONResponse(registro.errors, status=400)
+
+
+
+# En tu archivo views.py en Django
+from rest_framework.views import APIView
+from rest_framework.response import Response
+import base64
+import re
+from django.core.files.base import ContentFile
+class foto(APIView):
+    def post(self, request, *args, **kwargs):
+        image_data = request.data['image']
+        format, imgstr = image_data.split(';base64,')  
+        ext = format.split('/')[-1]  
+        image_data = base64.b64decode(imgstr)
+
+        # Suponiendo que tienes el ID del cliente disponible en la solicitud
+        cliente_id =12345678
+        cliente = Cliente.objects.get(rut_id=cliente_id)
+
+        # Utiliza ContentFile para convertir los datos en un objeto que se pueda usar con el campo de imagen
+        cliente.foto.save(f'cliente_{cliente_id}_foto.{ext}', ContentFile(image_data), save=True)
+
+        
+        return Response({'message': 'Imagen subida con éxito'})
+
+
+def serve_image(request, cliente_id):
+    cliente = Cliente.objects.get(rut_id=cliente_id)
+    if cliente.foto:
+        with cliente.foto.open() as f:
+            return HttpResponse(f.read(), content_type="image/jpeg")  # Ajusta el tipo de contenido según tu imagen
+    else:
+        # Puedes devolver una imagen por defecto o un error según tu lógica de negocio
+        return HttpResponse("Imagen no encontrada", status=404)
+
+
+
+
+
+
+
+
+
+
