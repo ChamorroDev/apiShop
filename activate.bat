@@ -9,6 +9,6 @@ call activate
 REM Cambiar al directorio del proyecto
 cd /d "C:\Users\ch\Desktop\proyecto\api\backend"
 
-REM Ejecutar el servidor Django
+REM Ejecutar el servidor Djangoa
 python manage.py runserver
 
