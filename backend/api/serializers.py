@@ -25,6 +25,19 @@ class BoletaSerializer(serializers.ModelSerializer):
         model = Boleta
         fields = '__all__'
 
+
+class ProductoProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductoProveedor
+        fields = '__all__'
+
+class ProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Proveedor
+        fields = '__all__'
+
+
+
 class ViewClienteSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.SerializerMethodField()
     genero_nombre = serializers.SerializerMethodField()
@@ -34,7 +47,7 @@ class ViewClienteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ViewCliente
-        fields = ('rut', 'dv',  'nombre', 'appaterno', 'apmaterno', 'email','ciudad_nombre','genero_nombre','telefono','nacimiento','genero','foto')
+        fields = ('usuario','rut', 'dv',  'nombre', 'appaterno', 'apmaterno', 'email','ciudad_nombre','genero_nombre','telefono','nacimiento','genero','foto')
     def get_foto(self, obj):
         try:
             cliente = Cliente.objects.get(rut_id=obj.rut)

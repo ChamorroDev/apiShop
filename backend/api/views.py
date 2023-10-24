@@ -572,6 +572,19 @@ class BoletaDetail(APIView):
             registro_serializer.save()
             return JSONResponseOk(None,msg="Boleta Actualizado")
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class ciudadtest(APIView):
+    def get(self, request, format=None):
+         registro = Negocio.get_ciudadAll()
+         serializer = CiudadSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        if Negocio.ciudadCrear(data['nombre'], data['region_id']):
+                return JSONResponseOk(None,msg="ciudad cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
@@ -775,12 +788,73 @@ class ViewProductoDetail(APIView):
         return JSONResponseOk(None, msg="Producto Actualizado")
   
  
+class CambiarClaveUsuario(APIView):
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        if Negocio.cambiarClave(data['rut'], data['clave']):
+                return JSONResponseOk(None,msg="Clave cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+class ProductoProveedorList(APIView):
+
+    def get(self, request, format=None):
+         registro = Negocio.get_productoProveedorAll()
+         serializer = ProductoProveedorSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        if (not Negocio.crear_ProductoProveedor(data['id'],data['producto'],data['precio'])):
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+ 
+        return JSONResponseOk(None,msg="producto proveedor actualizado")
+
+
+class ProductoProveedorDetail(APIView):
     
+    def get(self, request, rut, format=None):
+        registro = Negocio.clienteGet(rut)
+        serializer = ProductoProveedorSerializer(registro, context={'request': request})  # Pasar el contexto al serializador
+        return JSONResponseOk(serializer.data,msg="")  
+
+    def delete(self, request, rut, format=None):
+        data = JSONParser().parse(request)
+        if (not Negocio.clienteEliminar(rut)):
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        return JSONResponseOk(None,msg="producto proveedor Actualizado")
+    
+
+class PedidoList(APIView):
+    def get(self, request, format=None):
+        dataBoleta = BoletaSerializer(Boleta.objects.filter(), many=True)
+        dataFactura = FacturaSerializer(Factura.objects.filter(), many=True)
+        dataTodo = {
+                    'boletas':dataBoleta.data,
+                    'facturas':dataFactura.data,
+                        }
+        return JSONResponseOk(dataTodo,msg="todas las boletas y facturas")
+    
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        if (not Negocio.clienteCrear(data['rut'],data['dv']
+                            ,data['nombre'],data['appaterno'],data['apmaterno']
+                            ,data['email']
+                            ,data['telefono']
+                            ,data['genero']
+                            ,data['foto'])):
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        if ( 'clave' in data):
+            print ("entre")
+        return JSONResponseOk(None,msg="registro actualizado")
+    
+
 class ClienteList(APIView):
 
     def get(self, request, format=None):
          registro = Negocio.get_viewClienteAll()
-         serializer = ViewClienteSerializer(registro, many=True)
+         serializer = ViewClienteSerializer(registro, many=True, context={'request': request})
          return JSONResponseOkRows(serializer.data,"")
 
     def post(self, request, format=None):
@@ -792,7 +866,10 @@ class ClienteList(APIView):
                             ,data['genero']
                             ,data['foto'])):
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
-        return JSONResponseOk(None,msg="Registro Actualizado")
+        if ( 'clave' in data):
+            print ("entre")
+        return JSONResponseOk(None,msg="registro actualizado")
+
 
 class ClienteDetail(APIView):
     
@@ -1524,38 +1601,8 @@ def DetalleBodega(request, id):
 
 
 
-# En tu archivo views.py en Django
-from rest_framework.views import APIView
-from rest_framework.response import Response
-import base64
-import re
-from django.core.files.base import ContentFile
-class foto(APIView):
-    def post(self, request, *args, **kwargs):
-        image_data = request.data['image']
-        format, imgstr = image_data.split(';base64,')  
-        ext = format.split('/')[-1]  
-        image_data = base64.b64decode(imgstr)
-
-        # Suponiendo que tienes el ID del cliente disponible en la solicitud
-        cliente_id =12345678
-        cliente = Cliente.objects.get(rut_id=cliente_id)
-
-        # Utiliza ContentFile para convertir los datos en un objeto que se pueda usar con el campo de imagen
-        cliente.foto.save(f'cliente_{cliente_id}_foto.{ext}', ContentFile(image_data), save=True)
-
-        
-        return Response({'message': 'Imagen subida con éxito'})
 
 
-def serve_image(request, cliente_id):
-    cliente = Cliente.objects.get(rut_id=cliente_id)
-    if cliente.foto:
-        with cliente.foto.open() as f:
-            return HttpResponse(f.read(), content_type="image/jpeg")  # Ajusta el tipo de contenido según tu imagen
-    else:
-        # Puedes devolver una imagen por defecto o un error según tu lógica de negocio
-        return HttpResponse("Imagen no encontrada", status=404)
 
 
 

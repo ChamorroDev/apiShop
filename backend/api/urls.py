@@ -57,11 +57,23 @@ urlpatterns = [
     path('backend/crearwebpay/',   CrearWebPay.as_view()),
     path('backend/errorpago/',   errorPago.as_view()),
 
+    path('backend/cambiarclave/',   CambiarClaveUsuario.as_view()),
+    path('backend/pedidos/',   PedidoList.as_view()),
+
+    path('backend/proveedorlistaproducto/',   ProductoProveedorList.as_view()),
+    path('backend/proveedordetalleproducto/<int:id>/',   ProductoProveedorDetail.as_view()),
+
+
+
+
+
 
     path('backend/login/',   CustomTokenObtainPairView.as_view()),
     path('backend/log/',   LoginView.as_view()),
-    path('backend/foto/',   foto.as_view()),
-    path('backend/serve_image/<int:cliente_id>',   serve_image),
+
+    path('backend/ciudadtest/',   ciudadtest.as_view()),
+
+
 
 
 

@@ -332,10 +332,13 @@ class Bodega(models.Model):
         return self.nombre
 
 class ComprasProveedor(models.Model):
+    id = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True)
+    proveedor = models.ForeignKey(Proveedor, models.DO_NOTHING)
     producto = models.ForeignKey(Producto, models.DO_NOTHING)
     precio = models.IntegerField(null=False)
     cantidad = models.IntegerField(null=False)
-    destino = models.ForeignKey(Bodega, models.DO_NOTHING)
+    bodega = models.ForeignKey(Bodega, models.DO_NOTHING,null=True)
     created = models.DateTimeField(auto_now_add=True)
 
 class ProductoCantidad(models.Model):

@@ -52,6 +52,14 @@ class Negocio:
 
             cliente.foto.delete(save=True)
         return cliente
+    
+    def cambiarClave(rut,clave):
+        usuario = Negocio.get_usuario(rut)
+        if (usuario!= None):
+            usuario.clave=clave
+            usuario.save()
+
+        return True
 
     def clienteCrear(rut,dv,nombres,paterno,materno,email,telefono,genero,foto):
         persona = Negocio.get_persona(int(rut))
@@ -83,7 +91,9 @@ class Negocio:
             cliente=Negocio.actualizarFotoCliente(cliente, foto)
 
         if (usuario== None):
-            usuario = Usuario(None,rut,rut,rut)
+            usuario = Usuario(None,rut,rut,1)
+
+    
         persona.save()
         cliente.save()
         usuario.save()
@@ -104,46 +114,124 @@ class Negocio:
         usuario.delete()
         cliente.delete()
         persona.delete()          
+    def get_productoProveedorAll():
+        try:
+            return ProductoProveedor.objects.all()
+        except ProductoProveedor.DoesNotExist:
+            raise None  
+    def get_proveedor(id):
+        try:
+            return Proveedor.objects.get(id=id)
+        except Proveedor.DoesNotExist:
+            raise None 
+    def get_producto(id):
+        try:
+            return Producto.objects.get(id=id)
+        except Producto.DoesNotExist:
+            raise None 
+    def get_productoProveedor(prov,prod):
+        try:
+            return ProductoProveedor.objects.get(proveedor=prov,producto=prod)
+        except ProductoProveedor.DoesNotExist:
+            raise None
+    def get_productoProveedorAll(prod):
+        try:
+            return ProductoProveedor.objects.get(producto=prod)
+        except ProductoProveedor.DoesNotExist:
+            raise None
+    def crear_ProductoProveedor(proveedor_id,producto_id,precio):
+        proveedor = Negocio.get_proveedor(int(proveedor_id))
+        producto = Negocio.get_producto(int(producto_id))
+        provee=Negocio.get_productoProveedor(proveedor,producto)
+        if (provee== None):
+            provee =  Persona(proveedor=proveedor,producto=producto,cantidad=precio)
+        else:
+            provee.proveedor=proveedor_id
+            provee.producto=producto
+            provee.precio=precio
+
+        provee.save()
+
+        return True
+    def get_bodega(id):
+        try:
+            return Bodega.objects.get(id=id)
+        except Bodega.DoesNotExist:
+            raise None
+        
+    def get_producto(id):
+        try:
+            return Producto.objects.get(id=id)
+        except Producto.DoesNotExist:
+            raise None
+        
+    def get_stockBodegaAll(bodega):
+        try:
+            return ProductoCantidad.objects.get(bodega=bodega)
+        except ProductoCantidad.DoesNotExist:
+            raise None    
+    
+    def get_stockBodega(producto,bodega):
+        try:
+            return ProductoCantidad.objects.get(producto=producto,bodega=bodega)
+        except ProductoCantidad.DoesNotExist:
+            raise None
+
+    def crear_stockBodega(producto_id,bodega_id,cantidad):
+        producto = Negocio.get_producto(producto_id)
+        bodega = Negocio.get_bodega(bodega_id)
+        stock_bodega = Negocio.get_stockBodega(producto,bodega)
+        if (stock_bodega== None):
+            stock_bodega =  ProductoCantidad(producto=producto,bodega=bodega,cantidad=cantidad)
+        else:
+            stock_bodega.cantidad=cantidad
 
 
-class NegocioRegion:        
+        stock_bodega.save()
+
+        return True
+
+            
     def get_regionAll():
         try:
             return Region.objects.all()
         except Region.DoesNotExist:
             raise None    
             
+    def get_region_nombre(nombre):
+        try:
+            return Region.objects.get(nombre=nombre)
+        except Region.DoesNotExist:
+            return None    
     def get_region(id):
         try:
             return Region.objects.get(id=id)
         except Region.DoesNotExist:
-            return None             
+            return None         
   
     def regionCrear(nombre):
-        region =  Region(nombre=nombre)
-        region.save()
-        return True
-    def get_region(id):
-        try:
-            return Region.objects.get(id=id)
-        except Region.DoesNotExist:
-            return None  
-    def regionActualizar(id,nombre):
-        region=NegocioRegion.get_region(id)
-        region.nombre = nombre
+        region = Negocio.get_region_nombre(nombre)
+        if (region==None):
+            region = Region(nombre=nombre) 
+        else:
+            region.nombre
+
         region.save()
         return True
     
-    def regionGet(id):
-        return NegocioRegion.get_region(id)
+  
 
-class NegocioCiudad:        
     def get_ciudadAll():
         try:
             return Ciudad.objects.all()
         except Ciudad.DoesNotExist:
             raise None    
             
+    def get_ciudad_nombre(nombre):
+        try:
+            return Ciudad.objects.get(nombre=nombre)
+        except Ciudad.DoesNotExist:
+            return None
     def get_ciudad(id):
         try:
             return Ciudad.objects.get(id=id)
@@ -151,23 +239,23 @@ class NegocioCiudad:
             return None             
   
     def ciudadCrear(nombre,region_id):
-        region = Ciudad(nombre=nombre,region_id=region_id)
-        region.save()
-        return True
-    def get_ciudad(id):
-        try:
-            return Ciudad.objects.get(id=id)
-        except Ciudad.DoesNotExist:
-            return None  
-    def ciudadActualizar(id,nombre,region_id):
-        ciudad=NegocioCiudad.get_ciudad(id)
-        ciudad.nombre = nombre
-        ciudad.region_id = region_id
+        ciudad = Negocio.get_ciudad_nombre(nombre)
+        if (ciudad==None):
+            ciudad = Ciudad(nombre=nombre,region_id=region_id)
+        else:
+            ciudad.nombre=nombre
+            ciudad.region_id=region_id
         ciudad.save()
         return True
-    
-    def ciudadGet(id):
-        return NegocioCiudad.get_ciudad(id)
+
+
+    def crear_CompraProveedor(usuario,proveedor,producto,cantidad,bodega):
+        usuario=Negocio.get_usuario(usuario)
+        producto=Negocio.get_producto(id=producto)
+        compra = ComprasProveedor(usuario=usuario,proveedor_id=proveedor,producto_id=producto,precio=producto.precio,cantidad=cantidad,bodega=bodega)
+        compra.save()
+        return True
+   
 
 
 
