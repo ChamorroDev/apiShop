@@ -1140,7 +1140,7 @@ class CrearWebPay(APIView):
 
                 boleta.precio_total=total
                 boleta.save()
-                carrito.delete()
+              
             if primer_producto.documento=="Factura":
                 factura=Factura()
                 factura.cliente=cli
@@ -1174,7 +1174,7 @@ class CrearWebPay(APIView):
 
                 factura.precio_total=total
                 factura.save()
-                carrito.delete()
+            carrito.delete()
 
 
 
