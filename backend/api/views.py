@@ -939,7 +939,15 @@ class EmpleadoDetail(APIView):
         return JSONResponseOk(serializer.data,msg="")  
     
 
-
+class GeneroCargoList(APIView):
+    def get(self, request, format=None):
+        dataGenero = GeneroSerializer(Genero.objects.filter(), many=True)
+        dataCargo = CargoSerializer(Cargo.objects.filter(), many=True)
+        dataTodo = {
+                    'GeneroLista':dataGenero.data,
+                    'CargoLista':dataCargo.data,
+                        }
+        return JSONResponseOk(dataTodo,msg="todas las GeneroLista y CargoLista")
   
 def get_retiro_persona( rut):
         try:

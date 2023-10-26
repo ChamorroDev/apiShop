@@ -53,6 +53,7 @@ urlpatterns = [
     path('backend/boleta/<int:id>/',  BoletaDetail.as_view()),
     path('backend/carritosucursal/',   CarritoSucursal.as_view()),
     path('backend/retirador/',   RetiradorCliente.as_view()),
+    path('backend/generocargo/',   GeneroCargoList.as_view()),
 
     path('backend/crearwebpay/',   CrearWebPay.as_view()),
     path('backend/errorpago/',   errorPago.as_view()),
@@ -62,6 +63,7 @@ urlpatterns = [
 
     path('backend/proveedorlistaproducto/',   ProductoProveedorList.as_view()),
     path('backend/proveedordetalleproducto/<int:id>/',   ProductoProveedorDetail.as_view()),
+    
 
 
 
