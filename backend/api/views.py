@@ -790,8 +790,11 @@ class ViewProductoDetail(APIView):
  
 class CambiarClaveUsuario(APIView):
     def post(self, request, format=None):
-        data = JSONParser().parse(request)
-        if Negocio.cambiarClave(data['user'], data['clave']):
+        user = request.data.get('user')
+
+        clave = request.data.get('clave')
+
+        if Negocio.cambiarClave(user, clave):
                 return JSONResponseOk(None,msg="Clave cambiada")
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
         
@@ -933,22 +936,37 @@ class EmpleadoList(APIView):
 
 class EmpleadoDetail(APIView):
     
-    def get(self, request, rut, format=None):
-        registro = Negocio.get_empleado(rut)
+    def get(self, request, id, format=None):
+        registro = Negocio.get_empleado(id)
         serializer = EmpleadoEmpSerializer(registro, context={'request': request})  # Pasar el contexto al serializador
         return JSONResponseOk(serializer.data,msg="")  
     
 
 class GeneroCargoList(APIView):
     def get(self, request, format=None):
-        dataGenero = GeneroSerializer(Genero.objects.filter(), many=True)
-        dataCargo = CargoSerializer(Cargo.objects.filter(), many=True)
+        dataGenero = GeneroSerializer(Genero.objects.all(), many=True)
+        dataCargo = CargoSerializer(Cargo.objects.all(), many=True)
         dataTodo = {
                     'GeneroLista':dataGenero.data,
                     'CargoLista':dataCargo.data,
                         }
         return JSONResponseOk(dataTodo,msg="todas las GeneroLista y CargoLista")
   
+
+
+class EmpleadoEdit(APIView):
+    def get(self, request,id, format=None):
+        dataGenero = GeneroSerializer(Genero.objects.all(), many=True)
+        dataCargo = CargoSerializer(Cargo.objects.all(), many=True)
+        registro = Negocio.get_empleado(id)
+        dataEmpleado = EmpleadoEmpSerializer(registro, context={'request': request})
+        dataTodo = {
+                    'GeneroLista':dataGenero.data,
+                    'CargoLista':dataCargo.data,
+                    'Empleado':dataEmpleado.data
+                        }
+        return JSONResponseOk(dataTodo,msg="todas las GeneroLista empleado y CargoLista")
+
 def get_retiro_persona( rut):
         try:
             return RetiroPersona.objects.get(rut=rut)

@@ -54,6 +54,8 @@ urlpatterns = [
     path('backend/carritosucursal/',   CarritoSucursal.as_view()),
     path('backend/retirador/',   RetiradorCliente.as_view()),
     path('backend/generocargo/',   GeneroCargoList.as_view()),
+    path('backend/empleadoedit/<int:id>/',   EmpleadoEdit.as_view()),
+
 
     path('backend/crearwebpay/',   CrearWebPay.as_view()),
     path('backend/errorpago/',   errorPago.as_view()),

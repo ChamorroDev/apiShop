@@ -27,11 +27,16 @@ class Negocio:
             return Cliente.objects.get(pk=rut)
         except Cliente.DoesNotExist:
             return None  
-    def get_empleado(rut):
+    def get_empleado(id):
+        try:
+            return Empleado.objects.get(id=id)
+        except Empleado.DoesNotExist:
+            return None      
+    def get_empleado_rut(rut):
         try:
             return Empleado.objects.get(rut=rut)
         except Empleado.DoesNotExist:
-            return None           
+            return None       
     def get_persona( rut):
         try:
             return Persona.objects.get(pk=rut)
@@ -144,7 +149,7 @@ class Negocio:
 
     def empleadoCrear(rut,dv,nombres,paterno,materno,email,telefono,genero,cargo,sueldo):
         persona = Negocio.get_persona(int(rut))
-        empleado = Negocio.get_empleado(rut)
+        empleado = Negocio.get_empleado_rut(rut)
         usuario = Negocio.get_usuario(rut)
         
         gen=Genero.objects.get(id=genero)
@@ -160,10 +165,11 @@ class Negocio:
             persona.email=email
             persona.telefono=telefono
             persona.genero=gen
+        persona.save()
 
         if (empleado== None):
             
-            empleado = Empleado(rut=rut,nombre=nombres,codCargo=cargo,sueldo=sueldo)
+            empleado = Empleado(rut=persona,nombre=nombres,codCargo_ID=cargo,sueldo=sueldo)
             
         else:
             empleado.nombre=nombres
@@ -174,7 +180,6 @@ class Negocio:
             usuario = Usuario(None,rut,rut,1)
   
     
-        persona.save()
         empleado.save()
         usuario.save()
         
