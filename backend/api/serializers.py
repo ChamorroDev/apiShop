@@ -1,18 +1,23 @@
 from rest_framework import serializers
 from .models import *
 
-class EmpleadoSerializer(serializers.ModelSerializer):
-    nombre_cargo = serializers.SerializerMethodField()
+class PersonaEmpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Persona
+        exclude = ['actived', 'edited', 'created']
+
+class CargoEmpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cargo
+        exclude = ['actived', 'edited', 'created']
+
+class EmpleadoEmpSerializer(serializers.ModelSerializer):
+    rut = PersonaEmpSerializer()
+    codCargo = CargoEmpSerializer()
 
     class Meta:
         model = Empleado
-        fields = ('id', 'nombre','codCargo','nombre_cargo','sueldo')
-    def get_nombre_cargo(self, obj):
-        try:
-            cargo_nombre =Cargo.objects.get(id=obj.codCargo.id)
-            return cargo_nombre.nombre
-        except Cargo.DoesNotExist:
-            return None
+        fields = '__all__'
 
 
 class FacturaSerializer(serializers.ModelSerializer):

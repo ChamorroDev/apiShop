@@ -1,8 +1,10 @@
 from .models import *
 from django.core.files.base import ContentFile
-
+from django.conf import settings
+import os
+from shutil import copyfile
 import base64
-
+import shutil
 class Negocio:
     def get_viewCliente( rut):
         try:
@@ -15,12 +17,21 @@ class Negocio:
             return ViewCliente.objects.all()
         except ViewCliente.DoesNotExist:
             raise None        
-
+    def get_empleadoAll():
+        try:
+            return Empleado.objects.all()
+        except Empleado.DoesNotExist:
+            return None
     def get_cliente( rut):
         try:
             return Cliente.objects.get(pk=rut)
         except Cliente.DoesNotExist:
-            return None             
+            return None  
+    def get_empleado(rut):
+        try:
+            return Empleado.objects.get(rut=rut)
+        except Empleado.DoesNotExist:
+            return None           
     def get_persona( rut):
         try:
             return Persona.objects.get(pk=rut)
@@ -36,7 +47,8 @@ class Negocio:
         except Usuario.DoesNotExist:
             return None
     def actualizarFotoCliente(cliente, foto):
-        
+
+
         image_data =foto
         format, imgstr = image_data.split(';base64,')  
         ext = format.split('/')[-1]  
@@ -53,13 +65,26 @@ class Negocio:
             cliente.foto.delete(save=True)
         return cliente
     
-    def cambiarClave(rut,clave):
-        usuario = Negocio.get_usuario(rut)
+    def cambiarClave(user,clave):
+        usuario = Negocio.get_usuario(user)
         if (usuario!= None):
             usuario.clave=clave
             usuario.save()
 
         return True
+    
+    def usuarioCrear(rut,user,clave):
+        usuario = Negocio.get_usuario(user)
+        viewcliente = Negocio.get_viewCliente(rut)
+        if (usuario==None):
+            return False
+        usuario.usuario =user
+        usuario.clave =clave
+        usuario.save()
+        viewcliente.usuario=user
+        viewcliente.save()
+        return True
+
 
     def clienteCrear(rut,dv,nombres,paterno,materno,email,telefono,genero,foto):
         persona = Negocio.get_persona(int(rut))
@@ -92,7 +117,7 @@ class Negocio:
 
         if (usuario== None):
             usuario = Usuario(None,rut,rut,1)
-
+  
     
         persona.save()
         cliente.save()
@@ -113,7 +138,48 @@ class Negocio:
         usuario = Negocio.get_usuario(rut)
         usuario.delete()
         cliente.delete()
-        persona.delete()          
+        persona.delete()     
+
+
+
+    def empleadoCrear(rut,dv,nombres,paterno,materno,email,telefono,genero,cargo,sueldo):
+        persona = Negocio.get_persona(int(rut))
+        empleado = Negocio.get_empleado(rut)
+        usuario = Negocio.get_usuario(rut)
+        
+        gen=Genero.objects.get(id=genero)
+
+
+        if (persona== None):
+            persona =  Persona(rut=rut,dv=dv,nombre=nombres,appaterno=paterno,
+                               apmaterno=materno,email=email,telefono=telefono,fechaNacimiento='2023-01-01',genero=gen)
+        else:
+            persona.nombre=nombres
+            persona.appaterno=paterno
+            persona.apmaterno=materno
+            persona.email=email
+            persona.telefono=telefono
+            persona.genero=gen
+
+        if (empleado== None):
+            
+            empleado = Empleado(rut=rut,nombre=nombres,codCargo=cargo,sueldo=sueldo)
+            
+        else:
+            empleado.nombre=nombres
+            empleado.codCargo_id=cargo
+            empleado.sueldo=sueldo
+
+        if (usuario== None):
+            usuario = Usuario(None,rut,rut,1)
+  
+    
+        persona.save()
+        empleado.save()
+        usuario.save()
+        
+        return True
+
     def get_productoProveedorAll():
         try:
             return ProductoProveedor.objects.all()

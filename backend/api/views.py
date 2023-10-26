@@ -791,7 +791,7 @@ class ViewProductoDetail(APIView):
 class CambiarClaveUsuario(APIView):
     def post(self, request, format=None):
         data = JSONParser().parse(request)
-        if Negocio.cambiarClave(data['rut'], data['clave']):
+        if Negocio.cambiarClave(data['user'], data['clave']):
                 return JSONResponseOk(None,msg="Clave cambiada")
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
         
@@ -859,15 +859,25 @@ class ClienteList(APIView):
 
     def post(self, request, format=None):
         data = JSONParser().parse(request)
-        if (not Negocio.clienteCrear(data['rut'],data['dv']
-                            ,data['nombre'],data['appaterno'],data['apmaterno']
-                            ,data['email']
-                            ,data['telefono']
-                            ,data['genero']
-                            ,data['foto'])):
-            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
-        if ( 'clave' in data):
-            print ("entre")
+        if 'clave' not in data:
+            if (not Negocio.clienteCrear(data['rut'],data['dv']
+                                ,data['nombre'],data['appaterno'],data['apmaterno']
+                                ,data['email']
+                                ,data['telefono']
+                                ,data['genero']
+                                ,data['foto'])):
+                return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        else:
+             if (not Negocio.clienteCrear(data['rut'],data['dv']
+                                ,data['nombre'],data['appaterno'],data['apmaterno']
+                                ,data['email']
+                                ,data['telefono']
+                                ,data['genero']
+                                ,data['foto'])):
+                return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+             if (  not Negocio.usuarioCrear(data['rut'],data['user'],data['clave']) ):
+                return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        
         return JSONResponseOk(None,msg="registro actualizado")
 
 
@@ -878,17 +888,6 @@ class ClienteDetail(APIView):
         serializer = ViewClienteSerializer(registro, context={'request': request})  # Pasar el contexto al serializador
         return JSONResponseOk(serializer.data,msg="")  
     
-    # No es necesario ya que el Negocio.clienteCrear, actualiza o crea
-    # debe cambiarlo según sus necesidades
-
-    # def put(self, request, rut, format=None):
-    #     data = JSONParser().parse(request)
-    #     if (not Negocio.clienteActualizar(rut,data['dv']
-    #                         ,data['nombre'],data['papellido'],data['sapellido']
-    #                         ,data['email']
-    #                         ,data['comuna'],data['genero'])):
-    #         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
-    #     return JSONResponseOk(None,msg="Resistro Actualizado")
 
     def delete(self, request, rut, format=None):
         data = JSONParser().parse(request)
@@ -896,6 +895,52 @@ class ClienteDetail(APIView):
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
         return JSONResponseOk(None,msg="Resistro Actualizado")
     
+
+
+
+class EmpleadoList(APIView):
+
+    def get(self, request, format=None):
+         registro = Negocio.get_empleadoAll()
+         serializer = EmpleadoEmpSerializer(registro, many=True, context={'request': request})
+         return JSONResponseOkRows(serializer.data,"")
+
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        #if 'clave' not in data:
+        if (not Negocio.empleadoCrear(data['rut'],data['dv']
+                            ,data['nombre'],data['appaterno'],data['apmaterno']
+                            ,data['email']
+                            ,data['telefono']
+                            ,data['genero']
+                           ,data['cargo'],data['sueldo'])):
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        """
+        else:
+             if (not Negocio.clienteCrear(data['rut'],data['dv']
+                                ,data['nombre'],data['appaterno'],data['apmaterno']
+                                ,data['email']
+                                ,data['telefono']
+                                ,data['genero']
+                                ,data['foto'])):
+                return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+             if (  not Negocio.usuarioCrear(data['rut'],data['user'],data['clave']) ):
+                return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        """
+        
+        return JSONResponseOk(None,msg="registro actualizado")
+
+
+class EmpleadoDetail(APIView):
+    
+    def get(self, request, rut, format=None):
+        registro = Negocio.get_empleado(rut)
+        serializer = EmpleadoEmpSerializer(registro, context={'request': request})  # Pasar el contexto al serializador
+        return JSONResponseOk(serializer.data,msg="")  
+    
+
+
+  
 def get_retiro_persona( rut):
         try:
             return RetiroPersona.objects.get(rut=rut)
