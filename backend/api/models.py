@@ -123,10 +123,14 @@ class Empleado(models.Model):
 class Proveedor(models.Model):
     id = models.AutoField(primary_key=True)
     rut = models.ForeignKey(Persona, models.DO_NOTHING,default=1)
+    dv    = models.CharField(max_length=1, null=True)
     nombre = models.CharField(max_length=100)
+    email = models.EmailField(unique=False, null=True)
+    telefono = models.CharField(max_length=15, null=True)
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
     actived = models.IntegerField(blank=True, null=True)  
+
 
 
 class ProductoProveedor(models.Model):
@@ -334,8 +338,8 @@ class Bodega(models.Model):
 class ComprasProveedor(models.Model):
     id = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True)
-    proveedor = models.ForeignKey(Proveedor, models.DO_NOTHING)
-    producto = models.ForeignKey(Producto, models.DO_NOTHING)
+    proveedor = models.ForeignKey(Proveedor, models.DO_NOTHING, null=True)
+    producto = models.ForeignKey(Producto, models.DO_NOTHING, null=True)
     precio = models.IntegerField(null=False)
     cantidad = models.IntegerField(null=False)
     bodega = models.ForeignKey(Bodega, models.DO_NOTHING,null=True)
@@ -386,3 +390,9 @@ class MovimientoBodega(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
 
+class BodegaProveedor(models.Model):
+
+    rut = models.ForeignKey(Proveedor, models.DO_NOTHING)
+    bodega = models.ForeignKey(Bodega, models.DO_NOTHING,null=True) 
+    created = models.DateTimeField(auto_now_add=True)
+    edited = models.DateTimeField(auto_now=True)

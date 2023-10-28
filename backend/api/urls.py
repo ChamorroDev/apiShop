@@ -7,6 +7,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 urlpatterns = [
+    path('backend/usuario/',   UsuarioList.as_view()),
+
     path('backend/region/',   RegionList.as_view()),
     path('backend/region/<int:id>/',   RegionDetail.as_view()),
     path('backend/ciudad/',   CiudadList.as_view()),
@@ -67,6 +69,7 @@ urlpatterns = [
     path('backend/proveedordetalleproducto/<int:id>/',   ProductoProveedorDetail.as_view()),
     
 
+    path('backend/bodegadistancia/',   BodegasDistancias.as_view()),
 
 
 

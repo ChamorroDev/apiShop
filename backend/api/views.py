@@ -9,6 +9,8 @@ from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from .Negocio import *
+from .distancia import *
+
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from rest_framework import status
@@ -44,6 +46,20 @@ class JSONResponseErr(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponseErr, self).__init__(content, **kwargs)
+class UsuarioList(APIView):
+    def get(self, request, format=None):
+         registro = Usuario.objects.all()
+         serializer = UsuarioSerializer(registro, many=True)
+         return JSONResponseOkRows(serializer.data,"")
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        registro = UsuarioSerializer(data=data)
+        if registro.is_valid():
+            registro.save()
+            return JSONResponseOk(None,msg="Empleado Agregada")
+        else:
+            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EmpleadoList(APIView):
     def get(self, request, format=None):
@@ -58,6 +74,8 @@ class EmpleadoList(APIView):
             return JSONResponseOk(None,msg="Empleado Agregada")
         else:
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class EmpleadoDetail(APIView):
     def get(self, request, id, format=None):
@@ -1327,6 +1345,10 @@ class LoginView(APIView):
         return JSONResponseOk(info,msg='Todo correcto')
 
 
+class BodegasDistancias(APIView):
+    def get(self, request, format=None):
+         registro = Distancia.get_distancia(1,2)
+         return JSONResponseOk(registro,msg='Todo correcto')
 
        
 

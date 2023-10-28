@@ -169,7 +169,7 @@ class Negocio:
 
         if (empleado== None):
             
-            empleado = Empleado(rut=persona,nombre=nombres,codCargo_ID=cargo,sueldo=sueldo)
+            empleado = Empleado(rut=persona,nombre=nombres,codCargo_id=cargo,sueldo=sueldo)
             
         else:
             empleado.nombre=nombres
@@ -177,7 +177,7 @@ class Negocio:
             empleado.sueldo=sueldo
 
         if (usuario== None):
-            usuario = Usuario(None,rut,rut,1)
+            usuario = Usuario(None,rut,rut,rut)
   
     
         empleado.save()
