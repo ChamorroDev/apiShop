@@ -52,8 +52,9 @@ class Negocio:
         except Usuario.DoesNotExist:
             return None
     def actualizarFotoCliente(cliente, foto):
-
-
+        if foto == '':
+            cliente.foto=None
+            return cliente
         image_data =foto
         format, imgstr = image_data.split(';base64,')  
         ext = format.split('/')[-1]  
@@ -82,9 +83,14 @@ class Negocio:
         usuario = Negocio.get_usuario(user)
         viewcliente = Negocio.get_viewCliente(rut)
         if (usuario==None):
-            return False
-        usuario.usuario =user
-        usuario.clave =clave
+            persona= Negocio.get_persona(rut)
+            usuario=Usuario(rut=persona,usuario=user,clave=clave)
+
+        else:
+            usuario.usuario =user
+            usuario.clave =clave
+        
+
         usuario.save()
         viewcliente.usuario=user
         viewcliente.save()
@@ -112,7 +118,7 @@ class Negocio:
 
         if (cliente== None):
             
-            cliente = Cliente(rut=rut)
+            cliente = Cliente(rut=persona)
             cliente=Negocio.actualizarFotoCliente(cliente, foto)
             
         else:

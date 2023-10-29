@@ -929,6 +929,7 @@ class ClienteList(APIView):
     def post(self, request, format=None):
         data = JSONParser().parse(request)
         if 'clave' not in data:
+            print ("no clave")
             if (not Negocio.clienteCrear(data['rut'],data['dv']
                                 ,data['nombre'],data['appaterno'],data['apmaterno']
                                 ,data['email']
@@ -937,16 +938,21 @@ class ClienteList(APIView):
                                 ,data['foto'])):
                 return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
         else:
+             print ("con clave")
              if (not Negocio.clienteCrear(data['rut'],data['dv']
                                 ,data['nombre'],data['appaterno'],data['apmaterno']
                                 ,data['email']
                                 ,data['telefono']
                                 ,data['genero']
                                 ,data['foto'])):
+                print ("cree noocliente")
+                
                 return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+             print ("cree cliente")
              if (  not Negocio.usuarioCrear(data['rut'],data['user'],data['clave']) ):
+                print ("cree nousuario")
                 return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
-        
+            
         return JSONResponseOk(None,msg="registro actualizado")
 
 
