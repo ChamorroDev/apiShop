@@ -60,36 +60,51 @@ class UsuarioList(APIView):
         else:
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
-
-class EmpleadoList(APIView):
-    def get(self, request, format=None):
-         registro = Empleado.objects.all()
-         serializer = EmpleadoSerializer(registro, many=True)
-         return JSONResponseOkRows(serializer.data,"")
-    def post(self, request, format=None):
-        data = JSONParser().parse(request)
-        registro = EmpleadoSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponseOk(None,msg="Empleado Agregada")
-        else:
-            return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+class ComprasList(APIView):
+    def get(self, request,rut, format=None):
 
 
+        BoletaLista = Boleta.objects.filter(cliente=rut).order_by('-created')
+        FacturaLista = Factura.objects.filter(cliente=rut).order_by('-created')
+        listaCompras = []
 
-class EmpleadoDetail(APIView):
-    def get(self, request, id, format=None):
-            registro = Empleado.objects.get(id=id)
-            serializer = EmpleadoSerializer(registro)
-            return JSONResponseOk(serializer.data,msg="")  
-    def put(self, request, id, format=None):
-        registro = Empleado.objects.get(id=id)
-        data = JSONParser().parse(request)
-        registro_serializer = EmpleadoSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponseOk(None,msg="Empleado Actualizada")
-        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+        for boleta in BoletaLista:
+          
+            #     direccion = "{calle} {numero}, {ciudad}".format(calle=boleta.direccion.calle, numero=boleta.direccion.numero, ciudad=boleta.direccion.ciudad.nombre)
+            # else:
+            #     direccion = "{direccion} {numeracion}, {ciudad}".format(direccion=boleta.sucursal.direccion, numeracion=boleta.sucursal.numeracion, ciudad=boleta.sucursal.ciudad.nombre)
+
+            listaCompras.append({
+                'id': boleta.numero,
+                'Tipo': 'Boleta',
+                'documento': BoletaSerializer(boleta).data,
+                'fecha': boleta.created,
+                'direccion':"{calle} {numero}, {ciudad}, {region}".format(calle=boleta.direccion.calle, numero=boleta.direccion.numero, ciudad=boleta.direccion.ciudad.nombre,region=boleta.direccion.ciudad.region.nombre) 
+                if boleta.direccion 
+                else 
+                "{direccion} {numeracion}, {ciudad}, {region}".format(direccion=boleta.sucursal.direccion, numeracion=boleta.sucursal.numeracion, ciudad=boleta.sucursal.ciudad.nombre,region=boleta.sucursal.ciudad.region.nombre),            
+                'tipoDespacho': boleta.tipoDespacho.nombre if boleta.tipoDespacho else None,
+                'estadoPedido': boleta.estadoPedido.nombre if boleta.estadoPedido else None,
+            })
+
+        for factura in FacturaLista:
+            
+            listaCompras.append({
+                'id': factura.numero,
+                'Tipo': 'Factura',
+                'documento': FacturaSerializer(factura).data,
+                'fecha': factura.created,
+                'direccion':"{calle} {numero}, {ciudad}, {region}".format(calle=factura.direccion.calle, numero=factura.direccion.numero, ciudad=factura.direccion.ciudad.nombre,region=factura.direccion.ciudad.region.nombre)
+                  if factura.direccion 
+                else 
+                "{direccion} {numeracion}, {ciudad}, {region}".format(direccion=factura.sucursal.direccion, numeracion=factura.sucursal.numeracion, ciudad=factura.sucursal.ciudad.nombre,region=factura.sucursal.ciudad.region.nombre),            
+                'tipoDespacho': factura.tipoDespacho.nombre if factura.tipoDespacho else None,
+                'estadoPedido': factura.estadoPedido.nombre if factura.estadoPedido else None,
+            })
+
+        listaCompras = sorted(listaCompras, key=lambda k: k['fecha'], reverse=True)
+
+        return JSONResponseOkRows(listaCompras, "")
 
 
 class ProveedorList(APIView):
@@ -104,6 +119,7 @@ class ProveedorList(APIView):
             registro.save()
             return JSONResponseOk(None,msg="Proveedor Agregada")
         else:
+            print(registro.errors)
             return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
 class ProveedorDetail(APIView):
@@ -118,6 +134,7 @@ class ProveedorDetail(APIView):
         if registro_serializer.is_valid():
             registro_serializer.save()
             return JSONResponseOk(None,msg="Proveedor Actualizada")
+        print(registro_serializer.errors)
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
 
 class BodegaList(APIView):
@@ -551,17 +568,22 @@ class FacturaList(APIView):
 
 class FacturaDetail(APIView):
     def get(self, request, id, format=None):
-            registro = Factura.objects.get(id=id)
-            serializer = FacturaSerializer(registro)
-            return JSONResponseOk(serializer.data,msg="")  
+        registro = Factura.objects.get(numero=id)
+        estado_nombre = registro.estadoPedido.nombre if registro.estadoPedido else None
+        serializer = FacturaSerializer(registro)
+        print (serializer)
+        return JSONResponseOk(serializer.data,msg="")  
     def put(self, request, id, format=None):
         registro = Factura.objects.get(id=id)
         data = JSONParser().parse(request)
         registro_serializer = FacturaSerializer(registro, data=data)
+        
         if registro_serializer.is_valid():
             registro_serializer.save()
             return JSONResponseOk(None,msg="Factura Actualizado")
         return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+    
+
 
 class BoletaList(APIView):
     def get(self, request, format=None):
@@ -579,7 +601,7 @@ class BoletaList(APIView):
 
 class BoletaDetail(APIView):
     def get(self, request, id, format=None):
-            registro = Boleta.objects.get(id=id)
+            registro = Boleta.objects.get(numero=id)
             serializer = BoletaSerializer(registro)
             return JSONResponseOk(serializer.data,msg="")  
     def put(self, request, id, format=None):
@@ -609,6 +631,32 @@ class ciudadtest(APIView):
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
 
+class FacturaDetalleDetail(APIView):
+    def get(self, request,id, format=None):
+        
+        registro = Factura.objects.get(numero=id)
+        factura = FacturaSerializer(registro)
+        detalleFactura = DetalleFacturaSerializer(DetalleFactura.objects.filter(factura=registro), many=True, context={'request': request})
+        dataTodo = {
+                    'Factura':factura.data,
+                    'FacturaDetalle':detalleFactura.data,
+
+                    }
+        return JSONResponseOk(dataTodo,msg="")  
+
+class BoletaDetalleDetail(APIView):
+    def get(self, request,id, format=None):
+        
+        registro = Boleta.objects.get(numero=id)
+        boleta = BoletaSerializer(registro)
+        detalleBoleta = DetalleBoletaSerializer(DetalleBoleta.objects.filter(boleta=registro), many=True, context={'request': request})
+        dataTodo = {
+                    'Boleta':boleta.data,
+                    'BoletaDetalle':detalleBoleta.data,
+
+                    }
+        return JSONResponseOk(dataTodo,msg="")  
+    
 class ViewCategoriasMarcasAtributos(APIView):
     def get(self, request, format=None):
             dataCategoria = CategoriaSerializer(Categoria.objects.all(), many=True)
@@ -1691,18 +1739,3 @@ def DetalleBodega(request, id):
             return JSONResponse(registro_serializer.data)
 
     return JSONResponse(registro.errors, status=400)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

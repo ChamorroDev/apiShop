@@ -121,8 +121,8 @@ class Empleado(models.Model):
     actived = models.IntegerField(blank=True, null=True)  
 
 class Proveedor(models.Model):
-    id = models.AutoField(primary_key=True)
-    rut = models.ForeignKey(Persona, models.DO_NOTHING,default=1)
+    id   = models.AutoField(primary_key=True)
+    rut    = models.IntegerField(  null=True)    
     dv    = models.CharField(max_length=1, null=True)
     nombre = models.CharField(max_length=100)
     email = models.EmailField(unique=False, null=True)

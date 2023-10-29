@@ -51,12 +51,21 @@ urlpatterns = [
     path('backend/empleado/<int:id>/',  EmpleadoDetail.as_view()),
     path('backend/factura/',   FacturaList.as_view()),
     path('backend/factura/<int:id>/',  FacturaDetail.as_view()),
+    path('backend/facturadetalle/<int:id>/',  FacturaDetalleDetail.as_view()),
+
     path('backend/boleta/',   BoletaList.as_view()),
     path('backend/boleta/<int:id>/',  BoletaDetail.as_view()),
+    path('backend/boletadetalle/<int:id>/',  BoletaDetalleDetail.as_view()),
+
+
+    
     path('backend/carritosucursal/',   CarritoSucursal.as_view()),
     path('backend/retirador/',   RetiradorCliente.as_view()),
     path('backend/generocargo/',   GeneroCargoList.as_view()),
     path('backend/empleadoedit/<int:id>/',   EmpleadoEdit.as_view()),
+
+    path('backend/compraslist/<int:rut>/',   ComprasList.as_view()),
+
 
 
     path('backend/crearwebpay/',   CrearWebPay.as_view()),

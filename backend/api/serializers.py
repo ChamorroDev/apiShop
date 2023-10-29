@@ -18,18 +18,133 @@ class EmpleadoEmpSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
         fields = '__all__'
+        
+class DireccionSerializer(serializers.ModelSerializer):
+    ciudad_nombre = serializers.SerializerMethodField()
+    region_nombre = serializers.SerializerMethodField()
+    ciudad = Ciudad()
+    class Meta:
+        model = Direccion
+        fields = ('id', 
+                  'cliente',  
+                  'calle', 
+                  'numero',
+                  'ciudad',
+                  'ciudad_nombre', 
+                  'region_nombre',
+
+                  )
+    def get_ciudad_nombre(self, obj):
+        try:
+            ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
+            return ciudad_obj.nombre
+        except Ciudad.DoesNotExist:
+            return None
+    def get_region_nombre(self, obj):
+        try:
+            ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
+            region_nombre = Region.objects.get(id=ciudad_obj.region.id)
+            return region_nombre.nombre
+        except Region.DoesNotExist:
+            return None
 
 
 class FacturaSerializer(serializers.ModelSerializer):
+    estadoPedido_nombre = serializers.SerializerMethodField()
+    forma_pago_nombre = serializers.SerializerMethodField()
+    tipoDespacho_nombre = serializers.SerializerMethodField()
+    retiroPersona_info=serializers.SerializerMethodField()
+    direccion_info = serializers.SerializerMethodField()
+
+    def get_estadoPedido_nombre(self, obj):
+        return obj.estadoPedido.nombre if obj.estadoPedido else None
+
+    def get_forma_pago_nombre(self, obj):
+        return obj.forma_pago.nombre if obj.forma_pago else None
+
+    def get_tipoDespacho_nombre(self, obj):
+        return obj.tipoDespacho.nombre if obj.tipoDespacho else None
+
+    def get_retiroPersona_info(self, obj):
+        if obj.retiroPersona:
+            return f"{obj.retiroPersona.nombre} {obj.retiroPersona.apellido}"
+        return None
+
+    def get_direccion_info(self, obj):
+        if obj.direccion:
+            return f"{obj.direccion.calle} {obj.direccion.numero}, {obj.direccion.ciudad.nombre}, {obj.direccion.ciudad.region.nombre}"
+        elif obj.sucursal:
+            return f"{obj.sucursal.direccion} {obj.sucursal.numeracion}, {obj.sucursal.ciudad.nombre}, {obj.sucursal.ciudad.region.nombre}"
+        return None
+    
     class Meta:
         model = Factura
         fields = '__all__'
 
 class BoletaSerializer(serializers.ModelSerializer):
+    estadoPedido_nombre = serializers.SerializerMethodField()
+    forma_pago_nombre = serializers.SerializerMethodField()
+    tipoDespacho_nombre = serializers.SerializerMethodField()
+    retiroPersona_info=serializers.SerializerMethodField()
+    direccion_info = serializers.SerializerMethodField()
+
+    def get_estadoPedido_nombre(self, obj):
+        return obj.estadoPedido.nombre if obj.estadoPedido else None
+
+    def get_forma_pago_nombre(self, obj):
+        return obj.forma_pago.nombre if obj.forma_pago else None
+
+    def get_tipoDespacho_nombre(self, obj):
+        return obj.tipoDespacho.nombre if obj.tipoDespacho else None
+
+    def get_retiroPersona_info(self, obj):
+        if obj.retiroPersona:
+            return f"{obj.retiroPersona.nombre} {obj.retiroPersona.apellido}"
+        return None
+
+    def get_direccion_info(self, obj):
+        if obj.direccion:
+            return f"{obj.direccion.calle} {obj.direccion.numero}, {obj.direccion.ciudad.nombre}, {obj.direccion.ciudad.region.nombre}"
+        elif obj.sucursal:
+            return f"{obj.sucursal.direccion} {obj.sucursal.numeracion}, {obj.sucursal.ciudad.nombre}, {obj.sucursal.ciudad.region.nombre}"
+        return None
     class Meta:
         model = Boleta
         fields = '__all__'
 
+class DetalleFacturaSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.SerializerMethodField()
+    foto_producto = serializers.SerializerMethodField()
+             
+    def get_producto_nombre(self, obj):
+            return obj.producto.nombre if obj.producto else None
+    def get_foto_producto(self, obj):
+        if obj.producto and obj.producto.fotos.exists():
+            primera_foto = obj.producto.fotos.first()
+            request = self.context.get('request')
+
+            return request.build_absolute_uri(primera_foto.foto.url) if primera_foto else None
+        return None
+    class Meta:
+        model = DetalleFactura
+        fields = '__all__'
+
+class DetalleBoletaSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.SerializerMethodField()
+    foto_producto = serializers.SerializerMethodField()
+             
+    def get_producto_nombre(self, obj):
+            return obj.producto.nombre if obj.producto else None
+    def get_foto_producto(self, obj):
+        if obj.producto and obj.producto.fotos.exists():
+            primera_foto = obj.producto.fotos.first()
+            request = self.context.get('request')
+
+            return request.build_absolute_uri(primera_foto.foto.url) if primera_foto else None
+        return None
+    class Meta:
+        model = DetalleBoleta
+        fields = '__all__'
 
 class ProductoProveedorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -281,7 +396,3 @@ class CarritoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carrito
         fields = ['id', 'cantidad', 'created', 'edited', 'producto', 'cliente', 'nombre', 'precio','marca','descripcion']
-
-
-
-
