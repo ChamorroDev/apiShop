@@ -241,6 +241,11 @@ class ProductoDetalleSerializer(serializers.ModelSerializer):
         model = Producto
         fields = '__all__'
 
+class ProductoProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ('nombre', 'marca', 'modelo', 'precio')
+
 class ProductoSerializer(serializers.ModelSerializer):
     fotos = serializers.SerializerMethodField()
 
@@ -275,17 +280,26 @@ class CiudadSerializer(serializers.ModelSerializer):
 
 class BodegaSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.SerializerMethodField()
+    region_nombre = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Bodega
-        fields = ('id', 'nombre',  'direccion', 'numeracion','ciudad','ciudad_nombre')
+        fields = ('id', 'nombre',  'direccion', 'numeracion','ciudad','ciudad_nombre','region_nombre')
     def get_ciudad_nombre(self, obj):
         try:
             ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
             return ciudad_obj.nombre
         except Ciudad.DoesNotExist:
             return None
-
+    def get_region_nombre(self, obj):
+        try:
+            ciudad_obj = Ciudad.objects.get(id=obj.ciudad.id)
+            region_nombre = Region.objects.get(id=ciudad_obj.region.id)
+            return region_nombre.nombre
+        except Region.DoesNotExist:
+            return None
+        
 class SucursalSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.SerializerMethodField()
 

@@ -125,8 +125,21 @@ class ProveedorList(APIView):
 class ProveedorDetail(APIView):
     def get(self, request, id, format=None):
             registro = Proveedor.objects.get(id=id)
-            serializer = ProveedorSerializer(registro)
-            return JSONResponseOk(serializer.data,msg="")  
+            proveedor = ProveedorSerializer(registro)
+            bodega_ids = [bod.bodega_id for bod in Negocio.get_bodegaproveedores_id(id)]
+            bodegas = Bodega.objects.filter(id__in=bodega_ids) 
+            serializer1 = BodegaSerializer(bodegas, many=True) 
+            producto_ids = [pro.producto_id for pro in Negocio.get_productosproveedores_id(id)]
+            productos = Producto.objects.filter(id__in=producto_ids) 
+            serializer2 = ProductoProveedorSerializer(productos, many=True) 
+            dataTodo = {
+                    
+                'proveedor':proveedor.data,
+                'bodegas':serializer1.data,
+                'productos':serializer2.data,
+                            }
+        
+            return JSONResponseOk(dataTodo,msg="")  
     def put(self, request, id, format=None):
         registro = Proveedor.objects.get(id=id)
         data = JSONParser().parse(request)
@@ -630,6 +643,29 @@ class ciudadtest(APIView):
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
 ###################### VISTAS NEGOCIO ######################
+class BodegaProveedor(APIView):
+    def get(self, request,id, format=None):
+        bodega_ids = Negocio.get_bodegaproveedores_id(id) 
+        bodegas = Bodega.objects.filter(id__in=bodega_ids.bodega) 
+        serializer = BodegaSerializer(bodegas, many=True) 
+
+        return JSONResponseOk(serializer.data,msg="") 
+    def post(self, request,id, format=None):
+        data = JSONParser().parse(request)
+    
+        if Negocio.añadirbodegaProveedor(data["proveedor"],data["bodega"]):
+                return JSONResponseOk(None,msg="ciudad cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ProductoProveedor(APIView):
+
+    def post(self, request,id, format=None):
+        data = JSONParser().parse(request)
+        if Negocio.añadiproductoProveedor(data["proveedor"],data["producto"],data["precio"]):
+                return JSONResponseOk(None,msg="ciudad cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+    
 
 class FacturaDetalleDetail(APIView):
     def get(self, request,id, format=None):
@@ -642,7 +678,8 @@ class FacturaDetalleDetail(APIView):
                     'FacturaDetalle':detalleFactura.data,
 
                     }
-        return JSONResponseOk(dataTodo,msg="")  
+        return JSONResponseOk(dataTodo,msg="") 
+
 
 class BoletaDetalleDetail(APIView):
     def get(self, request,id, format=None):

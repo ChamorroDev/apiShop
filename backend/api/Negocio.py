@@ -16,7 +16,18 @@ class Negocio:
         try:
             return ViewCliente.objects.all()
         except ViewCliente.DoesNotExist:
-            raise None        
+            raise None    
+    def get_bodegaproveedores_id(id):
+        try:
+            return BodegaProveedor.objects.filter(rut=id)
+        except BodegaProveedor.DoesNotExist:
+            raise None  
+    def get_productosproveedores_id(id):
+        try:
+            return ProductoProveedor.objects.filter(proveedor_id=id)
+        except ProductoProveedor.DoesNotExist:
+            raise None  
+        
     def get_empleadoAll():
         try:
             return Empleado.objects.all()
@@ -333,7 +344,23 @@ class Negocio:
         compra.save()
         return True
    
-
-
+    def añadirbodegaProveedor(proveedor_id,bodega):
+        proveedor=Negocio.get_proveedor(id=proveedor_id)
+        if (proveedor==None):
+            return False
+        bod = Bodega(nombre=bodega['nombre'],direccion=bodega['direccion'],numeracion=bodega['numeracion'],ciudad_id=bodega['ciudad'])
+        bod.save()
+        bodPro=BodegaProveedor(rut=proveedor,bodega=bod)
+        bodPro.save()
+        return True
+    
+    def añadiproductoProveedor(proveedor_id,producto_id,precio):
+        proveedor=Negocio.get_proveedor(id=proveedor_id)
+        print (producto_id)
+        if (proveedor==None):
+            return False
+        bodPro=ProductoProveedor(proveedor=proveedor,producto_id=producto_id,precio=precio)
+        bodPro.save()
+        return True
 
 
