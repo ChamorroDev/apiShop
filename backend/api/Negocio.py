@@ -6,27 +6,43 @@ from shutil import copyfile
 import base64
 import shutil
 class Negocio:
+    def get_productoCantidad(bod_id,prod_id):
+        try:
+            return ProductoCantidad.objects.get(bodega_id=bod_id,producto_id=prod_id)
+        except ProductoCantidad.DoesNotExist:
+            return None
+    def get_comprasProveedor_id(id):
+        try:
+            return ComprasProveedor.objects.get(id=id)
+        except ComprasProveedor.DoesNotExist:
+            return None
+        
     def get_viewCliente( rut):
         try:
             return ViewCliente.objects.get(pk=rut)
         except ViewCliente.DoesNotExist:
-            raise None
+            return None
         
     def get_viewClienteAll():
         try:
             return ViewCliente.objects.all()
         except ViewCliente.DoesNotExist:
-            raise None    
+            return None    
     def get_bodegaproveedores_id(id):
         try:
             return BodegaProveedor.objects.filter(rut=id)
         except BodegaProveedor.DoesNotExist:
-            raise None  
+            return None  
     def get_productosproveedores_id(id):
         try:
             return ProductoProveedor.objects.filter(proveedor_id=id)
         except ProductoProveedor.DoesNotExist:
-            raise None  
+            return None  
+    def get_ProductoProveedor_producto(id):
+        try:
+            return ProductoProveedor.objects.filter(producto_id=id)
+        except ProductoProveedor.DoesNotExist:
+            return None 
         
     def get_empleadoAll():
         try:
@@ -61,6 +77,21 @@ class Negocio:
             else:
                 return None
         except Usuario.DoesNotExist:
+            return None
+    def get_usuario_rut( rut):
+        try:
+            return Usuario.objects.get(rut=rut)
+        except Usuario.DoesNotExist:
+            return None
+    def get_proveedor_nombre(nombre):
+        try:
+            return Proveedor.objects.get(nombre=nombre)
+        except Proveedor.DoesNotExist:
+            return None
+    def get_ProductoProveedor(prov_id,prod_id):
+        try:
+            return ProductoProveedor.objects.get(proveedor_id=prov_id,producto_id=prod_id)
+        except ProductoProveedor.DoesNotExist:
             return None
     def actualizarFotoCliente(cliente, foto):
         if foto == '':
@@ -354,13 +385,56 @@ class Negocio:
         bodPro.save()
         return True
     
+
     def añadiproductoProveedor(proveedor_id,producto_id,precio):
         proveedor=Negocio.get_proveedor(id=proveedor_id)
-        print (producto_id)
+        bodPro=Negocio.get_ProductoProveedor(proveedor_id,producto_id)
         if (proveedor==None):
-            return False
-        bodPro=ProductoProveedor(proveedor=proveedor,producto_id=producto_id,precio=precio)
+            bodPro=ProductoProveedor(proveedor=proveedor,producto_id=producto_id,precio=precio)
+        else:
+            bodPro.precio=precio
         bodPro.save()
         return True
 
 
+    def compraAbastecerProducto(prod,proveedor ,cantidad ,rut,bodega ):
+        user = Negocio.get_usuario_rut(rut)
+        prove = Negocio.get_proveedor_nombre(proveedor['proveedor_nombre'])
+        productoProve=Negocio.get_ProductoProveedor(prove.id,prod['id'])
+        nueva_compra =ComprasProveedor(estado_id=11,usuario=user,proveedor_id=prove.id,cantidad=cantidad ,producto_id= prod['id'],precio=productoProve.precio,bodega_id=bodega['id'])
+        nueva_compra.save()
+        return True
+    
+    def cambiosAbastecerProducto(id,obs,estado):
+        compra = Negocio.get_comprasProveedor_id(id)
+        estados_dict = {
+        'Por confirmar': 11,
+            'Cancelar pedido': 2,
+            'Confirmar pedido': 12
+        }
+
+        if estado in estados_dict:
+            compra.estado_id = estados_dict[estado]
+
+        compra.obs=obs
+
+        compra.save()
+        return True
+    
+    def entradaProductoProveedor(id,cantidad,estado):
+        compra = Negocio.get_comprasProveedor_id(id)
+        compra.cantidad_recibida = cantidad+compra.cantidad_recibida
+        stock = Negocio.get_productoCantidad(compra.bodega_id,compra.producto_id)
+        if (stock == None):
+            stock = ProductoCantidad (bodega_id=compra.bodega_id,producto_id=compra.producto_id,cantidad=cantidad)
+        else:
+            stock.cantidad= stock.cantidad+ cantidad
+        stock.save()
+        if (compra.cantidad_recibida != compra.cantidad):
+            compra.estado_id = 13
+            compra.save()
+            return True
+        compra.estado_id = 8
+        compra.save()
+        return True
+    

@@ -146,10 +146,14 @@ class DetalleBoletaSerializer(serializers.ModelSerializer):
         model = DetalleBoleta
         fields = '__all__'
 
-class ProductoProveedorSerializer(serializers.ModelSerializer):
+class ProductoProveedorTablaSerializer(serializers.ModelSerializer):
+    proveedor_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductoProveedor
-        fields = '__all__'
+        fields = ('precio','proveedor_nombre')
+    def get_proveedor_nombre(self, obj):
+            return obj.proveedor.nombre if obj.proveedor else None
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -410,3 +414,34 @@ class CarritoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carrito
         fields = ['id', 'cantidad', 'created', 'edited', 'producto', 'cliente', 'nombre', 'precio','marca','descripcion']
+
+
+
+class ComprasProveedorSerializer(serializers.ModelSerializer):
+    estado_nombre = serializers.CharField(source='estado.nombre', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.usuario', read_only=True)
+    proveedor_nombre = serializers.CharField(source='proveedor.nombre', read_only=True)
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    bodega_info = BodegaSerializer(source='bodega', read_only=True)
+
+
+    class Meta:
+        model = ComprasProveedor
+        fields = ['id','estado_nombre','producto_nombre', 'precio','created','usuario_nombre','proveedor_nombre','cantidad','bodega_info','obs','cantidad_recibida']
+
+
+class ProductoCantidadSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    foto_producto = serializers.SerializerMethodField()
+
+    def get_foto_producto(self, obj):
+        if obj.producto and obj.producto.fotos.exists():
+            primera_foto = obj.producto.fotos.first()
+            request = self.context.get('request')
+
+            return request.build_absolute_uri(primera_foto.foto.url) if primera_foto else None
+        return None
+
+    class Meta:
+        model = ComprasProveedor
+        fields = ['producto_nombre','cantidad','foto_producto']

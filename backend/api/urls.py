@@ -78,6 +78,22 @@ urlpatterns = [
     path('backend/proveedordetalleproducto/<int:id>/',   ProductoProveedorDetail.as_view()),
     path('backend/bodegaproveedor/<int:id>/',   BodegaProveedor.as_view()),
     path('backend/productoproveedor/<int:id>/',   ProductoProveedor.as_view()),
+    path('backend/productoproveedorlist/<int:ide>/',   ViewProductoProveedorList.as_view()),
+    path('backend/abastecerproducto/',   AbastecerProducto.as_view()),
+
+    path('backend/confirmarpedidosdetalle/<int:id>/',   ConfirmarEstadosDetail.as_view()),
+    path('backend/confirmarpedidos/',   ConfirmarEstadosList.as_view()),
+
+    path('backend/entradaproductoproveedor/',   EntradaProductoProveedorList.as_view()),
+    path('backend/entradaproductoproveedor/<int:id>/',   EntradaProductoProveedorList.as_view()),
+
+    path('backend/stockbodegas/',   StockBodegas.as_view()),
+
+    path('backend/stockproducto/',   StockProducto.as_view()),
+    path('backend/stockproducto/<int:id>/',   StockProductoDetail.as_view()),
+
+
+
 
 
 

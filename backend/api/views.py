@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from .Negocio import *
 from .distancia import *
-
+from django.db.models import Q
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from rest_framework import status
@@ -22,6 +22,7 @@ from django.core.files import File
 from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
+from django.db.models import Sum, F
 
 class JSONResponseOkRows(HttpResponse):
     def __init__(self, data,msg, **kwargs):
@@ -307,6 +308,7 @@ class MarcaList(APIView):
          return JSONResponseOkRows(serializer.data,"")
     def post(self, request, format=None):
         data = JSONParser().parse(request)
+        data['nombre']=data['nombre'].upper()
         registro = MarcaSerializer(data=data)
         if registro.is_valid():
             registro.save()
@@ -710,8 +712,6 @@ class ViewCategoriasMarcasAtributos(APIView):
 
 class CiudadesRegiones(APIView):
     def get(self, request, format=None):
-           
-            
             dataRegion = RegionSerializer(Region.objects.all(), many=True)
             dataCiudad = CiudadSerializer(Ciudad.objects.all(), many=True)
             dataTodo = {
@@ -720,6 +720,158 @@ class CiudadesRegiones(APIView):
                          }
             return JSONResponseOk(dataTodo,msg="Lista Regiones Ciudades")
     
+
+class ViewProductoProveedorList(APIView):
+    def get(self, request,ide, format=None):
+        producto = Producto.objects.get(id=ide)
+        pro = Negocio.get_ProductoProveedor_producto(ide)
+        prod = ProductoProveedorTablaSerializer(pro, many=True)
+        dataFotos= FotoProducto.objects.filter(producto=producto)
+        dataProducto = ProductoDetalleSerializer(producto)
+        dataCategorias = CategoriaSerializer(producto.categorias.all(), many=True)
+        tipo_producto_atributos = TipoProductoAtributo.objects.filter(producto=producto)
+        dataFotosList = FotoProductoSerializer(dataFotos, many=True, context={'request': request})
+        bodegas = BodegaSerializer(Bodega.objects.all(), many=True)
+
+        tipo_producto_atributos_serializer = TipoProductoAtributoSerializer(tipo_producto_atributos, many=True)
+        dataTodo = {
+                    'producto':dataProducto.data,
+                    'marca_nombre':producto.marca.nombre,
+                    'categorias':dataCategorias.data,
+                    'atributos': tipo_producto_atributos_serializer.data,
+                    'dataFotos':dataFotosList.data,
+                    'proveedor':prod.data,
+                    'bodegas':bodegas.data
+
+                        }
+        return JSONResponseOk(dataTodo,msg="Detalle producto")
+
+
+class AbastecerProducto(APIView):
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        print (data)
+        
+        if Negocio.compraAbastecerProducto( data["producto"],
+                                             data["proveedor"],
+                                             data["cantidad"],
+                                            data["user"],
+                                            data["bodega"]):
+                return JSONResponseOk(None,msg="ciudad cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+    
+class ConfirmarEstadosDetail(APIView):
+    def get(self, request,id, format=None):
+        por_confirmar = ComprasProveedorSerializer(ComprasProveedor.objects.get(id=id))
+        dataTodo = {
+                    'pedidos':por_confirmar.data,
+                        }
+        return JSONResponseOk(dataTodo,msg="Detalle id pedidos por confirmar")
+    def post(self, request,id, format=None):
+        data = JSONParser().parse(request)   
+        print ("Detalle id pedidos por confirmar")
+        print (data)     
+        if Negocio.cambiosAbastecerProducto( 
+                                            data["id"],
+                                            data["obs"],
+                                            data["estado"]):
+                return JSONResponseOk(None,msg="detalle cambiado cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+    
+class ConfirmarEstadosList(APIView):
+    def get(self, request, format=None):
+        por_confirmar = ComprasProveedorSerializer(ComprasProveedor.objects.all(), many=True)
+        dataTodo = {
+                    'pedidos':por_confirmar.data,
+                        }
+        return JSONResponseOk(dataTodo,msg="Lista pedidos por confirmar")
+    
+class EntradaProductoProveedorList(APIView):
+    def get(self, request, format=None):
+        por_confirmar = ComprasProveedorSerializer(
+                    ComprasProveedor.objects.filter(Q(estado_id=12) | Q(estado_id=13)),
+                    many=True
+                )
+        dataTodo = {
+                    'pedidos':por_confirmar.data,
+                        }
+        return JSONResponseOk(dataTodo,msg="Lista pedidos por esperando al proveedor/provedorparcial")
+    def post(self, request,id, format=None):
+        data = JSONParser().parse(request)   
+        print (data)     
+        if Negocio.entradaProductoProveedor( 
+                                            data["id"],
+                                            data["cantidad"],
+                                            data["estado"]):
+                return JSONResponseOk(None,msg="detalle cambiado cambiada")
+        return JSONResponseErr(None, status=status.HTTP_400_BAD_REQUEST)
+
+    
+class StockBodegas(APIView):
+    def get(self, request, format=None):
+        data = []
+        bodegas = Bodega.objects.all()
+
+        for bodega in bodegas:
+            productos = ProductoCantidad.objects.filter(bodega=bodega)
+            total = 0
+            for producto in productos:
+                total += producto.cantidad
+            data.append({
+                'Bodega_info': BodegaSerializer(bodega).data,
+                'Total en bodega': total
+            })
+        return JSONResponseOk(data,msg="Stock por bodegas")
+    
+class StockBodegasDetail(APIView):
+    def get(self, request,id, format=None):
+        data = ProductoCantidadSerializer(ProductoCantidad.objects.filter(bodega_id=id), many=True, context={'request': request})
+        return JSONResponseOk(data.data,msg="Stock por bodegas")
+    
+
+class StockProducto(APIView):
+    def get(self, request, format=None):
+        data = []
+        productos = Producto.objects.all()
+
+        for producto in productos:
+            bodegas = ProductoCantidad.objects.filter(producto=producto)
+            total = 0
+            for prod in bodegas:
+                total += prod.cantidad
+            producto_serializer = ProductoSerializer(producto, context={'request': request})
+            serialized_producto = producto_serializer.data
+            data.append({
+                'producto_info': serialized_producto,
+                'producto_total': total
+            })
+        return JSONResponseOk(data, msg="Stock por Producto")
+
+class StockProductoDetail(APIView):
+    def get(self, request, id, format=None):
+        prod = Producto.objects.get(id=id)
+        producto = ProductoSerializer(Producto.objects.get(id=id), context={'request': request})
+        bodegas = ProductoCantidad.objects.filter(producto_id=id)
+        total_en_bodegas = sum(bodega.cantidad for bodega in bodegas)
+        data = []
+        for bodega in bodegas:
+            bod = Bodega.objects.get(id=bodega.id)
+            bodegaSerializer = BodegaSerializer(bod)
+            data.append({
+                'bodega_info': bodegaSerializer.data,
+                'cantidad': bodega.cantidad
+            })
+        data = {
+            'producto': producto.data,
+            'total_en_bodegas': total_en_bodegas,
+            'bodegas': data
+        }
+        return JSONResponseOk(data, msg="Stock por Producto")
+
+
+
+
 class ViewProductoList(APIView):
     def get(self, request, format=None):
             # Crear una imagen de prueba
@@ -810,12 +962,12 @@ class ViewProductoDetail(APIView):
             dataFotos= FotoProducto.objects.filter(producto=producto)
             dataProducto = ProductoDetalleSerializer(producto)
             dataMarca = MarcaSerializer(Marca.objects.get(id=producto.marca.id))
-            dataCategorias = CategoriaSerializer(producto.categorias.all(), many=True)
             tipo_producto_atributos = TipoProductoAtributo.objects.filter(producto=producto)
 
 
             dataFotosList = FotoProductoSerializer(dataFotos, many=True, context={'request': request})
 
+            dataCategorias = CategoriaSerializer(producto.categorias.all(), many=True)
             dataCategoriasList = CategoriaSerializer(Categoria.objects.all(), many=True)
             tipo_producto_atributos_serializer = TipoProductoAtributoSerializer(tipo_producto_atributos, many=True)
             dataTodo = {

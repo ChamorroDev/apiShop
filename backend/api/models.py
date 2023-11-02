@@ -342,8 +342,11 @@ class ComprasProveedor(models.Model):
     producto = models.ForeignKey(Producto, models.DO_NOTHING, null=True)
     precio = models.IntegerField(null=False)
     cantidad = models.IntegerField(null=False)
+    cantidad_recibida = models.IntegerField(null=False,default=0)
     bodega = models.ForeignKey(Bodega, models.DO_NOTHING,null=True)
     created = models.DateTimeField(auto_now_add=True)
+    estado = models.ForeignKey(EstadoPedido, models.DO_NOTHING, null=True)
+    obs = models.CharField(max_length=150, null=True)
 
 class ProductoCantidad(models.Model):
     id = models.AutoField(primary_key=True)
@@ -352,11 +355,6 @@ class ProductoCantidad(models.Model):
     cantidad = models.IntegerField( )
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
-
-
-
-
-
 
 class Carrito(models.Model):
     id = models.AutoField(primary_key=True)
