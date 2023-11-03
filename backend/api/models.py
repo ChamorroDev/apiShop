@@ -394,3 +394,17 @@ class BodegaProveedor(models.Model):
     bodega = models.ForeignKey(Bodega, models.DO_NOTHING,null=True) 
     created = models.DateTimeField(auto_now_add=True)
     edited = models.DateTimeField(auto_now=True)
+
+
+class SalidaProductoBodegaDespacho (models.Model):
+
+    producto = models.ForeignKey(Producto, models.DO_NOTHING)
+    bodega_origen = models.ForeignKey(Bodega, models.DO_NOTHING)
+    factura = models.ForeignKey(Factura, models.DO_NOTHING,null=True)
+    boleta = models.ForeignKey(Boleta, models.DO_NOTHING,null=True)
+    camionera_emp = models.ForeignKey(Empleado, models.DO_NOTHING,null=True)
+    estado = models.ForeignKey(EstadoPedido, models.DO_NOTHING,null=True)
+    cantidad = models.PositiveIntegerField()
+    fecha_ida = models.DateTimeField(auto_now_add=True,null=True)
+    fecha_llegada = models.DateTimeField(null=True)
+

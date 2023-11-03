@@ -187,3 +187,9 @@ WEBPAY_CONFIGURATION = {
     'URL_RETORNO': 'http://localhost:8100/perfil/',
     'URL_FINAL': 'http://localhost:8100/',
 }
+
+EMAIL_HOST = 'smtp.googlemail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'tiendatienda158@gmail.com'
+EMAIL_HOST_PASSWORD = 'TIenda1234'
+EMAIL_USE_TLS = True

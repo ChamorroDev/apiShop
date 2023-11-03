@@ -870,6 +870,49 @@ class StockProductoDetail(APIView):
         return JSONResponseOk(data, msg="Stock por Producto")
 
 
+class SalidaProductoDespacho(APIView):
+    def get(self, request, format=None):
+        BoletaLista = Boleta.objects.all().order_by('-created')
+        FacturaLista = Factura.objects.all().order_by('-created')
+        listaCompras = []
+
+        for boleta in BoletaLista:
+          
+            #     direccion = "{calle} {numero}, {ciudad}".format(calle=boleta.direccion.calle, numero=boleta.direccion.numero, ciudad=boleta.direccion.ciudad.nombre)
+            # else:
+            #     direccion = "{direccion} {numeracion}, {ciudad}".format(direccion=boleta.sucursal.direccion, numeracion=boleta.sucursal.numeracion, ciudad=boleta.sucursal.ciudad.nombre)
+
+            listaCompras.append({
+                'id': boleta.numero,
+                'Tipo': 'Boleta',
+                'documento': BoletaSerializer(boleta).data,
+                'fecha': boleta.created,
+                'direccion':"{calle} {numero}, {ciudad}, {region}".format(calle=boleta.direccion.calle, numero=boleta.direccion.numero, ciudad=boleta.direccion.ciudad.nombre,region=boleta.direccion.ciudad.region.nombre) 
+                if boleta.direccion 
+                else 
+                "{direccion} {numeracion}, {ciudad}, {region}".format(direccion=boleta.sucursal.direccion, numeracion=boleta.sucursal.numeracion, ciudad=boleta.sucursal.ciudad.nombre,region=boleta.sucursal.ciudad.region.nombre),            
+                'tipoDespacho': boleta.tipoDespacho.nombre if boleta.tipoDespacho else None,
+                'estadoPedido': boleta.estadoPedido.nombre if boleta.estadoPedido else None,
+            })
+
+        for factura in FacturaLista:
+            
+            listaCompras.append({
+                'id': factura.numero,
+                'Tipo': 'Factura',
+                'documento': FacturaSerializer(factura).data,
+                'fecha': factura.created,
+                'direccion':"{calle} {numero}, {ciudad}, {region}".format(calle=factura.direccion.calle, numero=factura.direccion.numero, ciudad=factura.direccion.ciudad.nombre,region=factura.direccion.ciudad.region.nombre)
+                  if factura.direccion 
+                else 
+                "{direccion} {numeracion}, {ciudad}, {region}".format(direccion=factura.sucursal.direccion, numeracion=factura.sucursal.numeracion, ciudad=factura.sucursal.ciudad.nombre,region=factura.sucursal.ciudad.region.nombre),            
+                'tipoDespacho': factura.tipoDespacho.nombre if factura.tipoDespacho else None,
+                'estadoPedido': factura.estadoPedido.nombre if factura.estadoPedido else None,
+            })
+
+        listaCompras = sorted(listaCompras, key=lambda k: k['fecha'], reverse=True)
+        return JSONResponseOk(listaCompras, msg="Stock por Producto")
+
 
 
 class ViewProductoList(APIView):

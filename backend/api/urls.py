@@ -88,15 +88,19 @@ urlpatterns = [
     path('backend/entradaproductoproveedor/<int:id>/',   EntradaProductoProveedorList.as_view()),
 
     path('backend/stockbodegas/',   StockBodegas.as_view()),
+    path('backend/stockbodegasdetail/<int:id>',   StockBodegasDetail.as_view()),
+
+
 
     path('backend/stockproducto/',   StockProducto.as_view()),
     path('backend/stockproducto/<int:id>/',   StockProductoDetail.as_view()),
 
 
+    path('backend/salidaproductodespacho/',   SalidaProductoDespacho.as_view()),
 
 
 
-
+####TESTTT# >>>>
     path('backend/bodegadistancia/',   BodegasDistancias.as_view()),
 
 
