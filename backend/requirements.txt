@@ -13,7 +13,6 @@ future==0.18.3
 geocoder==1.38.1
 idna==3.4
 marshmallow==3.17.0
-mysqlclient==2.2.0
 packaging==23.2
 Pillow==10.0.1
 psycopg2-binary==2.9.9
