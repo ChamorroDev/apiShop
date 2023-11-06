@@ -868,12 +868,65 @@ class StockProductoDetail(APIView):
             'bodegas': data
         }
         return JSONResponseOk(data, msg="Stock por Producto")
+    
+class SalidaDetallePedidoStock(APIView):
+    def productostock_bodegas(id,request):
+        producto = ProductoSerializer(Producto.objects.get(id=id), context={'request': request})
+        bodegas = ProductoCantidad.objects.filter(producto_id=id)
+        total_en_bodegas = sum(bodega.cantidad for bodega in bodegas)
+        data = []
+        for bodega in bodegas:
+            bod = Bodega.objects.get(id=bodega.id)
+            bodegaSerializer = BodegaSerializer(bod)
+            data.append({
+                'bodega_info': bodegaSerializer.data,
+                'cantidad': bodega.cantidad
+            })
+        data = {
+            'producto': producto.data,
+            'total_en_bodegas': total_en_bodegas,
+            'bodegas': data
+        }
+        return data
+    def post(self, request, id, format=None):
+        data = JSONParser().parse(request)   
+        lista_camioneros = Empleado.objects.filter(codCargo_id=5) ##cargo=camionero
+
+        datainfo = {
+            'lista_productos': [],
+            'lista_camioneros': EmpleadoEmpSerializer(lista_camioneros, many=True).data
+        }
+
+        if "Factura" == data["tipo_documento"]:
+            factura = DetalleFactura.objects.filter(factura_id=id)
+            for elem in factura:
+                stock_producto = SalidaDetallePedidoStock.productostock_bodegas(elem.producto.id, request)
+                datainfo['lista_productos'].append({
+                    'info_producto': stock_producto,
+                    'cantidad':  elem.cantidad,
+                    'cantidad_entregada': elem.cantidad_entregada,
+                })
+            return JSONResponseOk(datainfo, msg="Stock por Producto")
+
+        boleta = DetalleBoleta.objects.filter(boleta_id=id)
+        for elem in boleta:
+            stock_producto = SalidaDetallePedidoStock.productostock_bodegas(elem.producto.id, request)
+            datainfo['lista_productos'].append({
+                'info_producto': stock_producto,
+                'cantidad':  elem.cantidad,
+                'cantidad_entregada': elem.cantidad_entregada,
+            })
+
+        return JSONResponseOk(datainfo, msg="Stock por Producto")
+
+                
 
 
 class SalidaProductoDespacho(APIView):
     def get(self, request, format=None):
-        BoletaLista = Boleta.objects.all().order_by('-created')
-        FacturaLista = Factura.objects.all().order_by('-created')
+        BoletaLista = Boleta.objects.filter(estadoPedido_id=10).order_by('-created')
+        #ComprasProveedor.objects.filter(Q(estado_id=12) | Q(estado_id=13)),
+        FacturaLista = Factura.objects.filter(estadoPedido_id=10).order_by('-created')
         listaCompras = []
 
         for boleta in BoletaLista:
@@ -914,6 +967,53 @@ class SalidaProductoDespacho(APIView):
         return JSONResponseOk(listaCompras, msg="Stock por Producto")
 
 
+class CrearSalidaProductoDespacho(APIView):
+    def post(self, request,rut, format=None):
+        data = JSONParser().parse(request)   
+        empleado= Empleado.objects.get(rut_id=int(data["usuario"]))
+        persona= Persona.objects.get(rut=int(rut))
+
+        #data {'tipo_documento': 'Factura', 'numero': '7', 'productos': [{'bodegaId': 5, 'cantidad': 1, 'producto': 23}], 'usuario': '19431138' //rutempleado}
+        datainfo=[]
+        if "Factura"==data["tipo_documento"]:
+            factura= Factura.objects.get(numero=data["numero"])
+            factura.estadoPedido_id=14
+            factura.save()
+            salida_factura = SalidaProductoBodegaDespacho(user_created=persona,factura_id=data["numero"],camionera_emp=empleado,estado_id=14) #buscando producto en bodega
+            salida_factura.save()
+            for elem in data["productos"]:
+                detalle = DetalleSalidaProductoBodegaDespacho(salidaDespacho=salida_factura,producto_id=elem["producto"], cantidad=elem["cantidad"],bodega_origen_id=elem["bodegaId"]) 
+                detalle.save()
+            return JSONResponseOk(None, msg="Guia Despacho creado con exito")
+
+ 
+        salida_boleta = SalidaProductoBodegaDespacho(user_created=persona,boleta_id=data["numero"],camionera_emp=empleado,estado_id=14) #buscando producto en bodega
+        salida_boleta.save()
+        boleta= Boleta.objects.get(numero=data["numero"])
+        boleta.estadoPedido_id=14
+        boleta.save()
+        for elem in data["productos"]:
+                detalle = DetalleSalidaProductoBodegaDespacho(salidaDespacho=salida_boleta,producto_id=elem["producto"], cantidad=elem["cantidad"],bodega_origen_id=elem["bodegaId"]) 
+                detalle.save()
+
+        return JSONResponseOk(None, msg="Guia Despacho creado con exito")
+    
+class ListaGuiasDespachos(APIView):
+    def get(self, request, format=None):
+        guias= SalidaProductoBodegaDespachoSerializer(SalidaProductoBodegaDespacho.objects.all(),many=True)
+        return JSONResponseOkRows(guias.data,"")
+    
+class DetalleGuiaDespacho(APIView):
+    def get(self, request,id, format=None):
+        guia = SalidaProductoBodegaDespachoSerializer(SalidaProductoBodegaDespacho.objects.get(id=id))
+        detalles = DetalleSalidaProductoBodegaDespacho.objects.filter(salidaDespacho_id=id)
+        datas = DetalleSalidaProductoBodegaDespachoSerializer(detalles,many=True) 
+        info ={
+            'guia':guia.data,
+            'detalle' :datas.data
+
+        }
+        return JSONResponseOkRows(info,"")
 
 class ViewProductoList(APIView):
     def get(self, request, format=None):
@@ -1394,11 +1494,20 @@ class CarroCliente(APIView):
         carro=Carrito.objects.filter(cliente=cli)
         carro.delete()
         return JSONResponseOk(None,msg="Producto borrado del carro")
-
+    
+#aca añado producto al carro del cliente
 class CarroClientePost(APIView):
     def post(self, request, format=None):
         data = JSONParser().parse(request)
         prod=Producto.objects.get(id=data['producto'])
+        bodegas = ProductoCantidad.objects.filter(producto_id=data['producto'])
+        total_en_bodegas = sum(bodega.cantidad for bodega in bodegas)
+
+        if total_en_bodegas <int(data['cantidad']):
+
+            return JSONResponseOk({'status': 'false', 'message': 'no stock'}, msg="no stock")
+
+
         cli=Cliente.objects.get(rut=data['cliente'])
         
         if Carrito.objects.filter(cliente=data['cliente'], producto=prod).count() == 0:
@@ -1420,14 +1529,20 @@ class CrearWebPay(APIView):
         tar=data['tarjeta']
         cli=Cliente.objects.get(rut=data['rut'])
         
-       
-
+        #forma buena crear boleta factura
+        #arreglar ********
+        #se guardan pero depende si se borran
+        carrito= Carrito.objects.filter(cliente=cli)
+        total=0
+        for elem in carrito:
+            total=total+(elem.cantidad*elem.producto.precio)
+        carrito=carrito.first() 
         try:
-            ####3 CREO EL PEDIDO ADEMAS EN ESTADO NO PAGADO Y TODAS LAS DEMAS VARIABLES
-            total=123
-            orden_compra = '1231'
-            return_url= 'http://localhost:8000/folder/'
-            s_id='1231'
+            #### webpay
+            total=total
+            orden_compra = carrito.id
+            #return_url= 'http://localhost:8000/folder/'
+            s_id=carrito.id
 
             ##response = (Transaction()).create(orden_compra, s_id, total, return_url)
             ##print (response)
@@ -1692,288 +1807,3 @@ def DetalleCategoria(request, id):
     return JSONResponse(registro.errors, status=400)
 
 
-
-@csrf_exempt
-def ListaProductos(request):
-    if request.method == 'GET':
-         registro = Producto.objects.all()
-         serializer = ProductoSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = ProductoSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleProducto(request, id):
-    try:
-        registro = Producto.objects.get(id=id)
-    except Producto.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = ProductoSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = ProductoSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-
-@csrf_exempt
-def ListaEmpleados(request):
-    if request.method == 'GET':
-         registro = Empleado.objects.all()
-         serializer = EmpleadoSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = EmpleadoSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleEmpleado(request, id):
-    try:
-        registro = Empleado.objects.get(id=id)
-    except Empleado.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = EmpleadoSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = EmpleadoSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-
-@csrf_exempt
-def ListaMovimientoBodegas(request):
-    if request.method == 'GET':
-         registro = MovimientoBodega.objects.all()
-         serializer = MovimientoBodegaSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = MovimientoBodegaSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleMovimientoBodegas(request, id):
-    try:
-        registro = MovimientoBodega.objects.get(id=id)
-    except MovimientoBodega.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = MovimientoBodegaSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = MovimientoBodegaSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-@csrf_exempt
-def ListaSucursales(request):
-    if request.method == 'GET':
-         registro = Sucursal.objects.all()
-         serializer = SucursalSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = SucursalSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleSucursal(request, id):
-    try:
-        registro = Sucursal.objects.get(id=id)
-    except Sucursal.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = SucursalSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = SucursalSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-
-@csrf_exempt
-def ListaRegiones(request):
-    if request.method == 'GET':
-         registro = Region.objects.all()
-         serializer = RegionSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = RegionSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleRegion(request, id):
-    try:
-        registro = Region.objects.get(id=id)
-    except Region.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = RegionSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = RegionSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-
-@csrf_exempt
-def ListaCiudades(request):
-    if request.method == 'GET':
-         registro = Ciudad.objects.all()
-         serializer = CiudadSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = CiudadSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleCiudad(request, id):
-    try:
-        registro = Ciudad.objects.get(id=id)
-    except Ciudad.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = CiudadSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = CiudadSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)
-
-
-@csrf_exempt
-def ListaBodegas(request):
-    if request.method == 'GET':
-         registro = Bodega.objects.all()
-         serializer = BodegaSerializer(registro, many=True)
-         return JSONResponse(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        print(data)
-        registro = BodegaSerializer(data=data)
-        if registro.is_valid():
-            registro.save()
-            return JSONResponse(registro.data, status=201)
-        else:
-            errors = registro.errors
-            print(errors)
-            
-        return JSONResponse(registro.errors, status=400) 
-
-@csrf_exempt
-def DetalleBodega(request, id):
-    try:
-        registro = Bodega.objects.get(id=id)
-    except Bodega.DoesNotExist:
-        return HttpResponse(status=408)  
-
-    if request.method == 'GET':
-        registro = BodegaSerializer(registro)
-        return JSONResponse(registro.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        registro_serializer = BodegaSerializer(registro, data=data)
-        if registro_serializer.is_valid():
-            registro_serializer.save()
-            return JSONResponse(registro_serializer.data)
-
-    return JSONResponse(registro.errors, status=400)

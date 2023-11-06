@@ -241,9 +241,18 @@ class FotoProductoSerializer(serializers.ModelSerializer):
 
 class ProductoDetalleSerializer(serializers.ModelSerializer):
     categorias = serializers.PrimaryKeyRelatedField(many=True, queryset=Categoria.objects.all())
+    stock_total = serializers.SerializerMethodField()
+
     class Meta:
         model = Producto
         fields = '__all__'
+    def get_stock_total(self,obj):
+        try:
+            bodegas = ProductoCantidad.objects.filter(producto_id=obj.id)
+            total_en_bodegas = sum(bodega.cantidad for bodega in bodegas)
+            return total_en_bodegas
+        except FotoProducto.DoesNotExist:
+            return None
 
 class ProductoProveedorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -252,10 +261,11 @@ class ProductoProveedorSerializer(serializers.ModelSerializer):
 
 class ProductoSerializer(serializers.ModelSerializer):
     fotos = serializers.SerializerMethodField()
+    stock_total = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
-        fields = ('id', 'nombre', 'descripcion', 'marca', 'modelo', 'precio', 'categorias', 'created', 'edited', 'actived', 'fotos')
+        fields = ('id', 'nombre', 'descripcion', 'marca', 'modelo', 'precio', 'categorias', 'created', 'edited', 'actived', 'fotos','stock_total')
     def get_fotos(self, obj):
         try:
             fotos_productos = FotoProducto.objects.filter(producto=obj.id)
@@ -267,6 +277,14 @@ class ProductoSerializer(serializers.ModelSerializer):
                 return None
         except FotoProducto.DoesNotExist:
             return None
+    def get_stock_total(self,obj):
+        try:
+            bodegas = ProductoCantidad.objects.filter(producto_id=obj.id)
+            total_en_bodegas = sum(bodega.cantidad for bodega in bodegas)
+            return total_en_bodegas
+        except FotoProducto.DoesNotExist:
+            return None
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
@@ -445,3 +463,28 @@ class ProductoCantidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = ComprasProveedor
         fields = ['producto_nombre','cantidad','foto_producto']
+
+class SalidaProductoBodegaDespachoSerializer(serializers.ModelSerializer):
+    camionero_nombre = serializers.CharField(source='camionera_emp.nombre', read_only=True)
+    camionero_appaterno = serializers.CharField(source='camionera_emp.rut.appaterno', read_only=True)
+    camionero_apmaterno = serializers.CharField(source='camionera_emp.rut.apmaterno', read_only=True)
+    estado_nombre = serializers.CharField(source='estado.nombre', read_only=True)
+
+
+
+
+    class Meta:
+        model = SalidaProductoBodegaDespacho
+        fields = '__all__'
+
+class DetalleSalidaProductoBodegaDespachoSerializer(serializers.ModelSerializer):
+
+    producto_nombre= serializers.CharField(source='producto.nombre', read_only=True)
+    bodega_nombre= serializers.CharField(source='bodega_origen.nombre', read_only=True)
+    bodega_ciudad= serializers.CharField(source='bodega_origen.ciudad', read_only=True)
+    bodega_region= serializers.CharField(source='bodega_origen.ciudad.region', read_only=True)
+
+
+    class Meta:
+        model = DetalleSalidaProductoBodegaDespacho
+        fields = '__all__'

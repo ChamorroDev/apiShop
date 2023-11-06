@@ -9,6 +9,6 @@ call activate
 REM Cambiar al directorio del proyecto
 cd /d "C:\Users\ch\Desktop\proyecto\api\backend"
 
-REM Ejecutar el servidor Djangoa
+REM Ejecutar el servidor Djangoa// segun puerto o 0.0.0.0
 python manage.py runserver
 

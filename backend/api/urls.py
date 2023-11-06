@@ -97,6 +97,16 @@ urlpatterns = [
 
 
     path('backend/salidaproductodespacho/',   SalidaProductoDespacho.as_view()),
+    path('backend/salidadetallepedidostock/<int:id>/',   SalidaDetallePedidoStock.as_view()),
+
+    path('backend/crearsalidaproductodespacho/<int:rut>/',   CrearSalidaProductoDespacho.as_view()),
+
+    path('backend/listaguiasdespacho/',   ListaGuiasDespachos.as_view()),
+    path('backend/detalleguiadespacho/<int:id>/',   DetalleGuiaDespacho.as_view()),
+
+
+
+
 
 
 
@@ -132,26 +142,6 @@ urlpatterns = [
     path('categorias/', ListaCategorias, name='lista-categorias'),
     path('categorias/<int:id>/', DetalleCategoria, name='detalle-categoria'),
 
-    path('productos/', ListaProductos, name='lista-productos'),
-    path('productos/<int:id>/', DetalleProducto, name='detalle-producto'),
-
-    path('regiones/', ListaRegiones, name='lista-regiones'),
-    path('regiones/<int:id>/', DetalleRegion, name='detalle-region'),
-
-    path('ciudades/', ListaCiudades, name='lista-ciudades'),
-    path('ciudades/<int:id>/', DetalleCiudad, name='detalle-ciudad'),
-
-    path('bodegas/', ListaBodegas, name='lista-bodegas'),
-    path('bodegas/<int:id>/', DetalleBodega, name='detalle-bodega'),
-
-    path('sucursales/', ListaSucursales, name='lista-sucursales'),
-    path('sucursales/<int:id>/', DetalleSucursal, name='detalle-sucursal'),
-
-    path('empleados/', ListaEmpleados, name='lista-empleados'),
-    path('empleados/<int:id>/', DetalleEmpleado, name='detalle-empleado'),
-
-    path('movimientobodegas/', ListaMovimientoBodegas, name='lista-movimiento-bodegas'),
-    path('movimientobodegas/<int:id>/', DetalleMovimientoBodegas, name='detalle-movimiento-bodega'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

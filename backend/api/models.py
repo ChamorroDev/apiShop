@@ -263,6 +263,7 @@ class DetalleFactura(models.Model):
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
+    cantidad_entregada = models.PositiveIntegerField(default=0,null=True)
     precio_unitario = models.IntegerField()
     subtotal = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
@@ -273,6 +274,7 @@ class DetalleBoleta(models.Model):
     boleta = models.ForeignKey(Boleta, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
+    cantidad_entregada = models.PositiveIntegerField(default=0,null=True)
     precio_unitario = models.IntegerField()
     subtotal = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
@@ -398,13 +400,18 @@ class BodegaProveedor(models.Model):
 
 class SalidaProductoBodegaDespacho (models.Model):
 
-    producto = models.ForeignKey(Producto, models.DO_NOTHING)
-    bodega_origen = models.ForeignKey(Bodega, models.DO_NOTHING)
     factura = models.ForeignKey(Factura, models.DO_NOTHING,null=True)
     boleta = models.ForeignKey(Boleta, models.DO_NOTHING,null=True)
     camionera_emp = models.ForeignKey(Empleado, models.DO_NOTHING,null=True)
+    user_created= models.ForeignKey(Persona, models.DO_NOTHING,null=True)
     estado = models.ForeignKey(EstadoPedido, models.DO_NOTHING,null=True)
-    cantidad = models.PositiveIntegerField()
     fecha_ida = models.DateTimeField(auto_now_add=True,null=True)
     fecha_llegada = models.DateTimeField(null=True)
+
+
+class DetalleSalidaProductoBodegaDespacho (models.Model):
+    salidaDespacho =models.ForeignKey(SalidaProductoBodegaDespacho, models.DO_NOTHING,null=True)
+    producto = models.ForeignKey(Producto, models.DO_NOTHING)
+    cantidad = models.PositiveIntegerField()
+    bodega_origen = models.ForeignKey(Bodega, models.DO_NOTHING)
 
